@@ -14,22 +14,29 @@ export const IncidentsTimeline: React.FC<IncidentsTimelineProps> = ({
   onSelectIncident,
 }) => {
   return (
-    <div className="rounded-xl border border-white/10 bg-canvas-cardDark/70 backdrop-blur-md p-5 flex flex-col h-full">
-      <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-emerald-400" />
-          <h2 className="text-sm font-semibold text-white tracking-tight">
-            Live Incident Audit Trail
-          </h2>
+    <div className="rounded-2xl modern-card p-6 flex flex-col h-full">
+      <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400">
+            <Activity className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+              Live Incident Audit Trail
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Real-time audit log of all gateway decisions
+            </p>
+          </div>
         </div>
-        <span className="text-xs font-mono text-slate-400">
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
           {incidents.length} Records
         </span>
       </div>
 
-      <div className="flex-1 overflow-auto space-y-2 max-h-[380px] pr-1">
+      <div className="flex-1 overflow-auto space-y-2.5 max-h-[380px] pr-1">
         {incidents.length === 0 ? (
-          <p className="text-xs text-slate-500 font-mono py-8 text-center">
+          <p className="text-xs text-slate-500 py-10 text-center">
             No incidents recorded yet. Trigger a request to start logging.
           </p>
         ) : (
@@ -44,47 +51,45 @@ export const IncidentsTimeline: React.FC<IncidentsTimelineProps> = ({
               <div
                 key={inc.id}
                 onClick={() => onSelectIncident(inc)}
-                className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                   isSelected
-                    ? 'border-brand-orange bg-brand-orange/10 shadow-glow-orange'
-                    : 'border-white/5 bg-canvas-subtleDark/50 hover:border-white/20 hover:bg-canvas-subtleDark'
+                    ? 'border-brand-orange bg-orange-50/60 dark:bg-orange-950/20 ring-1 ring-brand-orange/40'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-canvas-subtleDark/40 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
-                <div className="flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    {isCache && <Zap className="w-3.5 h-3.5 text-amber-400" />}
-                    {isGemini && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-                    {isVeto && <AlertOctagon className="w-3.5 h-3.5 text-rose-400" />}
-                    {isBypass && <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />}
-                    <span className="font-bold text-white uppercase">{inc.service_id}</span>
-                    <span className="text-slate-400">#{inc.id.slice(0, 8)}</span>
+                    {isCache && <Zap className="w-4 h-4 text-amber-500" />}
+                    {isGemini && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                    {isVeto && <AlertOctagon className="w-4 h-4 text-rose-500" />}
+                    {isBypass && <ShieldAlert className="w-4 h-4 text-rose-500" />}
+                    <span className="font-bold text-slate-900 dark:text-white uppercase font-mono">{inc.service_id}</span>
+                    <span className="text-slate-400 font-mono text-[11px]">#{inc.id.slice(0, 8)}</span>
                   </div>
-                  <span className="text-slate-400 text-[11px]">
+                  <span className="text-slate-400 text-xs">
                     {new Date(inc.timestamp).toLocaleTimeString()}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between mt-2 text-[11px] font-mono">
+                <div className="flex items-center justify-between mt-2.5 text-xs">
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                       isCache
-                        ? 'bg-amber-500/20 text-amber-300'
+                        ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40'
                         : isGemini
-                        ? 'bg-emerald-500/20 text-emerald-300'
-                        : isVeto
-                        ? 'bg-rose-500/20 text-rose-300'
-                        : 'bg-rose-500/20 text-rose-300'
+                        ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40'
+                        : 'bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40'
                     }`}
                   >
                     {inc.resolution_mode}
                   </span>
 
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <span>{(inc.total_latency_ms || 0).toFixed(1)}ms</span>
-                    <span className={inc.final_status === 200 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                  <div className="flex items-center gap-2.5 text-slate-500 dark:text-slate-400 font-medium">
+                    <span className="font-mono">{(inc.total_latency_ms || 0).toFixed(1)}ms</span>
+                    <span className={inc.final_status === 200 ? 'text-emerald-600 dark:text-emerald-400 font-bold font-mono' : 'text-rose-600 dark:text-rose-400 font-bold font-mono'}>
                       HTTP {inc.final_status}
                     </span>
-                    <ChevronRight className="w-3 h-3 text-slate-600" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                   </div>
                 </div>
               </div>

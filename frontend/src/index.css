@@ -3,14 +3,18 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.011em;
+  }
+
   body {
-    background-color: #0c0d0e;
-    color: #e2e8f0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   code, pre {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    letter-spacing: normal;
   }
 }
 
@@ -20,26 +24,39 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(249, 115, 22, 0.4);
-  border-radius: 3px;
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(249, 115, 22, 0.7);
+  background: rgba(249, 115, 22, 0.6);
 }
 
-/* Shimmer / Pulse Effects */
-.glass-panel {
-  background: rgba(20, 22, 24, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Modern Card Surfaces */
+.modern-card {
+  background-color: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
 }
 
-.glass-panel-accent {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(20, 22, 24, 0.95));
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(249, 115, 22, 0.25);
+.dark .modern-card {
+  background-color: #0f1524;
+  border: 1px solid rgba(30, 41, 59, 0.85);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.modern-card-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modern-card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.08);
+}
+.dark .modern-card-hover:hover {
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.5);
 }

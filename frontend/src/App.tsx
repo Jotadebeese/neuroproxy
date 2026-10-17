@@ -7,6 +7,7 @@ import { LiveDiffViewer } from './components/LiveDiffViewer'
 import { IncidentsTimeline } from './components/IncidentsTimeline'
 import { RulesTable } from './components/RulesTable'
 import { ContractEditorModal } from './components/ContractEditorModal'
+import { StoryWalkthrough } from './components/StoryWalkthrough'
 import {
   fetchBootstrap,
   sendProxyRequest,
@@ -14,7 +15,6 @@ import {
   upsertServiceContract,
 } from './api'
 import {
-  BootstrapResponse,
   ChaosPreset,
   ServiceContract,
   Metrics,
@@ -23,6 +23,13 @@ import {
 } from './types'
 
 export const App: React.FC = () => {
+  const [currentView, setCurrentView] = useState<'story' | 'console'>('story')
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('neuroproxy_theme')
+    if (saved === 'light' || saved === 'dark') return saved
+    return 'dark'
+  })
+
   const [contracts, setContracts] = useState<ServiceContract[]>([])
   const [presets, setPresets] = useState<ChaosPreset[]>([])
   const [metrics, setMetrics] = useState<Metrics>({
@@ -44,6 +51,21 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isBenchmarking, setIsBenchmarking] = useState<boolean>(false)
   const [isContractModalOpen, setIsContractModalOpen] = useState<boolean>(false)
+
+  // Sync theme with DOM and localStorage
+  useEffect(() => {
+    const root = document.documentElement
+    if (theme === 'dark') {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+    localStorage.setItem('neuroproxy_theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
+  }
 
   const loadData = async () => {
     try {
@@ -90,7 +112,6 @@ export const App: React.FC = () => {
   const handleBurstBenchmark = async () => {
     setIsBenchmarking(true)
     try {
-      // Pick the first preset (checkout with Spanish drift)
       const preset = presets[0] || {
         service_id: 'checkout',
         payload: {
@@ -101,7 +122,7 @@ export const App: React.FC = () => {
         },
       }
 
-      // Execute 1st request to guarantee cache compilation if empty
+      // Warm up
       await sendProxyRequest(preset.service_id, preset.payload, true)
 
       // Burst 10 requests concurrently
@@ -119,7 +140,6 @@ export const App: React.FC = () => {
         setSelectedIncident(latest.incident)
         setMetrics(latest.metrics)
         setRules(latest.rules || [])
-        // Refresh full incident log
         await loadData()
       }
     } catch (err: any) {
@@ -148,50 +168,70 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-canvas-dark text-slate-100 flex flex-col selection:bg-brand-orange/30">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-800 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       {/* Top Header */}
       <Header
+        currentView={currentView}
+        onViewChange={(v) => setCurrentView(v)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onReset={handleReset}
         onBurstBenchmark={handleBurstBenchmark}
         onOpenContractModal={() => setIsContractModalOpen(true)}
         isBenchmarking={isBenchmarking}
       />
 
-      {/* Main Content Dashboard */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Telemetry Metrics Bar */}
-        <MetricsBar metrics={metrics} />
-
-        {/* Dynamic Pipeline Flow Graph */}
-        <FlowVisualizer
-          lastIncident={lastIncident}
-          isProcessing={isLoading || isBenchmarking}
-        />
-
-        {/* Traffic Injection & Live Diff Viewer (2-Column Grid) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-5 flex flex-col">
-            <PayloadPlayground
-              presets={presets}
-              contracts={contracts}
-              onSend={handleSendRequest}
-              isLoading={isLoading || isBenchmarking}
-            />
-          </div>
-          <div className="lg:col-span-7 flex flex-col">
-            <LiveDiffViewer incident={selectedIncident || lastIncident} />
-          </div>
-        </div>
-
-        {/* Incidents Timeline & Active Rule Cache (2-Column Grid) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <IncidentsTimeline
-            incidents={incidents}
-            selectedIncident={selectedIncident}
-            onSelectIncident={(inc) => setSelectedIncident(inc)}
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {currentView === 'story' ? (
+          <StoryWalkthrough
+            presets={presets}
+            lastIncident={lastIncident}
+            onTriggerPreset={async (sId, p, sH) => {
+              await handleSendRequest(sId, p, sH)
+              // Auto-switch to console so user can inspect the live result in depth
+              setCurrentView('console')
+            }}
+            onSwitchToConsole={() => setCurrentView('console')}
+            isProcessing={isLoading || isBenchmarking}
           />
-          <RulesTable rules={rules} />
-        </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Telemetry Metrics Bar */}
+            <MetricsBar metrics={metrics} />
+
+            {/* Dynamic Pipeline Flow Graph */}
+            <FlowVisualizer
+              lastIncident={lastIncident}
+              isProcessing={isLoading || isBenchmarking}
+            />
+
+            {/* Traffic Injection & Live Diff Viewer (2-Column Grid) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-5 flex flex-col">
+                <PayloadPlayground
+                  presets={presets}
+                  contracts={contracts}
+                  onSend={handleSendRequest}
+                  isLoading={isLoading || isBenchmarking}
+                />
+              </div>
+              <div className="lg:col-span-7 flex flex-col">
+                <LiveDiffViewer incident={selectedIncident || lastIncident} />
+              </div>
+            </div>
+
+            {/* Incidents Timeline & Active Rule Cache (2-Column Grid) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <IncidentsTimeline
+                incidents={incidents}
+                selectedIncident={selectedIncident}
+                onSelectIncident={(inc) => setSelectedIncident(inc)}
+              />
+              <RulesTable rules={rules} />
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Contract Editor Modal */}
@@ -202,9 +242,17 @@ export const App: React.FC = () => {
         onSaveContract={handleSaveContract}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-4 px-6 text-center text-xs font-mono text-slate-500 bg-canvas-cardDark/50">
-        Google Cloud AI Builder Cup 2026 • Autonomous Self-Healing API Gateway • Built with Go, Cloud Run &amp; Gemini 2.5 Flash
+      {/* Modern Footer */}
+      <footer className="border-t border-slate-200 dark:border-slate-800/80 py-6 px-6 text-center text-xs text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-canvas-cardDark/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-800 dark:text-slate-200">NeuroProxy</span>
+            <span>• Google Cloud AI Builder Cup 2026 Submission</span>
+          </div>
+          <p className="text-slate-400 dark:text-slate-500">
+            Cloud Run • Gemini 2.5 Flash • In-Memory LRU &amp; Cloud Memorystore Redis • Sub-15MB Zero-Dependency Go Binary
+          </p>
+        </div>
       </footer>
     </div>
   )

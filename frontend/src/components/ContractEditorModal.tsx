@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { ServiceContract } from '../types'
-import { X, Layers, Plus, Save, Globe, Code2 } from 'lucide-react'
+import { X, Layers, Plus, Save, Globe } from 'lucide-react'
 
 interface ContractEditorModalProps {
   contracts: ServiceContract[]
@@ -43,8 +43,8 @@ export const ContractEditorModal: React.FC<ContractEditorModalProps> = ({
 
   const handleAddNew = () => {
     setSelectedId('')
-    setContractId('new-service')
-    setContractName('New Custom Microservice')
+    setContractId('custom-api')
+    setContractName('Custom Microservice')
     setEndpoint('https://httpbin.org/post')
     setDescription('Custom microservice contract definition')
     setFieldsJson(JSON.stringify({ order_id: 'string', amount_cents: 'int' }, null, 2))
@@ -73,29 +73,36 @@ export const ContractEditorModal: React.FC<ContractEditorModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-2xl bg-canvas-cardDark border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between pb-4 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-blue-400" />
-            <h3 className="text-base font-semibold text-white">
-              Target Microservice Schema Contracts
-            </h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-2xl bg-white dark:bg-canvas-cardDark border border-slate-200 dark:border-slate-800 rounded-3xl p-7 shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/40 text-blue-600 dark:text-blue-400">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Target Schema Contracts
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Configure endpoints, required fields, and types
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Existing Contracts Selector & New button */}
-        <div className="flex items-center gap-2 my-4">
+        <div className="flex items-center gap-2.5 my-4">
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="flex-1 bg-canvas-subtleDark border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-brand-orange"
+            className="flex-1 bg-slate-50 dark:bg-canvas-subtleDark border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
           >
             {contracts.map((c) => (
               <option key={c.id} value={c.id}>
@@ -106,18 +113,18 @@ export const ContractEditorModal: React.FC<ContractEditorModalProps> = ({
           <button
             type="button"
             onClick={handleAddNew}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/20 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
-            New Contract
+            <Plus className="w-4 h-4" />
+            <span>New Contract</span>
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSave} className="space-y-3.5 overflow-auto flex-1 pr-1">
-          <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={handleSave} className="space-y-4 overflow-auto flex-1 pr-1">
+          <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Contract ID (URL Slug):
               </label>
               <input
@@ -125,11 +132,11 @@ export const ContractEditorModal: React.FC<ContractEditorModalProps> = ({
                 value={contractId}
                 onChange={(e) => setContractId(e.target.value)}
                 required
-                className="w-full bg-canvas-subtleDark border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:border-brand-orange focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-canvas-subtleDark border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-brand-orange/40 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Service Display Name:
               </label>
               <input
@@ -137,60 +144,60 @@ export const ContractEditorModal: React.FC<ContractEditorModalProps> = ({
                 value={contractName}
                 onChange={(e) => setContractName(e.target.value)}
                 required
-                className="w-full bg-canvas-subtleDark border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:border-brand-orange focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-canvas-subtleDark border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-medium focus:ring-2 focus:ring-brand-orange/40 focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-slate-400 mb-1 flex items-center gap-1">
-              <Globe className="w-3.5 h-3.5 text-cyan-400" />
-              Target Microservice Upstream Endpoint:
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-cyan-500" />
+              <span>Target Microservice Upstream Endpoint:</span>
             </label>
             <input
               type="text"
               value={endpoint}
               onChange={(e) => setEndpoint(e.target.value)}
-              placeholder="e.g. internal://checkout-service or https://api.upstream.internal/v1"
+              placeholder="e.g. internal://checkout-service or https://httpbin.org/post"
               required
-              className="w-full bg-canvas-subtleDark border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:border-brand-orange focus:outline-none"
+              className="w-full bg-slate-50 dark:bg-canvas-subtleDark border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-brand-orange/40 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-slate-400 mb-1">
-              Required Schema Fields &amp; Validation Types (JSON format):
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Required Schema Fields &amp; Validation Types (JSON):
             </label>
             <textarea
-              rows={6}
+              rows={5}
               value={fieldsJson}
               onChange={(e) => setFieldsJson(e.target.value)}
-              className="w-full bg-[#0a0a0c] border border-white/10 rounded-lg p-3 text-xs font-mono text-emerald-400 focus:outline-none focus:border-brand-orange resize-none"
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-xs font-mono text-emerald-400 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 resize-none"
               spellCheck={false}
             />
           </div>
 
           {error && (
-            <p className="text-xs text-rose-400 font-mono">
+            <p className="text-xs text-rose-500 font-medium">
               {error}
             </p>
           )}
 
-          <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-xs font-mono text-slate-400 hover:text-white"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-mono font-bold bg-brand-orange text-slate-950 hover:brightness-110 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold bg-brand-orange text-slate-950 hover:brightness-105 cursor-pointer disabled:opacity-50 shadow-md"
             >
               <Save className="w-3.5 h-3.5" />
-              {isSaving ? 'Saving...' : 'Save & Upsert Contract'}
+              <span>{isSaving ? 'Saving...' : 'Save & Upsert Contract'}</span>
             </button>
           </div>
         </form>
