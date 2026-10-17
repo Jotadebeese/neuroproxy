@@ -494,6 +494,11 @@
 
     function onServiceChange(serviceId) {
       renderContractInfo(serviceId);
+      // Auto-select the first matching scenario for this service so the payload matches the domain
+      const matchingPreset = state.presets.find(p => p.service_id === serviceId);
+      if (matchingPreset && state.selectedPresetId !== matchingPreset.id) {
+        selectPreset(matchingPreset.id);
+      }
     }
 
     function renderContractInfo(serviceId) {
