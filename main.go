@@ -15,6 +15,8 @@ import (
 )
 
 func main() {
+	loadDotEnv(".env.local")
+	loadDotEnv(".env")
 	engine := proxy.NewEngine()
 
 	// Seed 1 initial demonstration incident on startup so judges opening the dashboard immediately see live telemetry
@@ -181,6 +183,28 @@ func seedInitialDemoTraffic(engine *proxy.Engine) {
 		// Seed 1 Gemini synthesis heal + 1 subsequent <1ms cache hit on startup
 		_, _ = engine.ProcessRequest(ctx, presets[0].ServiceID, presets[0].Payload, true)
 		_, _ = engine.ProcessRequest(ctx, presets[0].ServiceID, presets[0].Payload, true)
+	}
+}
+
+func loadDotEnv(filename string) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		val := strings.Trim(strings.TrimSpace(parts[1]), `"'`)
+		if key != "" && os.Getenv(key) == "" {
+			_ = os.Setenv(key, val)
+		}
 	}
 }
 

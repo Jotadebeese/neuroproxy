@@ -4,6 +4,12 @@
 > **Track:** Future of Work & Enterprise Productivity *(Autonomous Developer Infrastructure & SRE)*  
 > **Stack:** Go 1.23 (`net/http`, `sync.RWMutex`), Google Gemini (`gemini-2.5-flash`), Next.js 15 / React 19 / Tailwind CSS v4, Google Cloud Run
 
+> [!IMPORTANT]
+> **👋 Team Zenith Systems Onboarding (Start Here):**
+> * **Master Execution Plan & Timeline:** See [`PLAN.md`](./PLAN.md)
+> * **Official Pitch Deck Slide Copy & Portal Text:** See [`PITCH_DECK_OUTLINE.md`](./PITCH_DECK_OUTLINE.md)
+> * **Run Locally in 10 Seconds:** Copy `.env.example` to `.env.local`, add your `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey), run `go run .`, and open **`http://localhost:8080`**.
+
 ---
 
 ## 1. The Problem: Schema Drift & 3:00 AM Outages
