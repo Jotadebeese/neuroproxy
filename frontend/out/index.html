@@ -167,30 +167,49 @@
 
         <!-- TARGET MICROSERVICE CONTRACT (WITH LIVE CUSTOM EDITOR) -->
         <div class="mb-4 p-3 bg-canvas-light dark:bg-canvas-dark border border-dashed border-brand-ash dark:border-brand-borderDark">
-          <div class="flex items-center justify-between mb-1.5 gap-2">
-            <span class="text-[11px] font-mono uppercase text-brand-orange">Target Contract</span>
-            <div class="flex items-center gap-1.5">
-              <select id="serviceSelect" onchange="onServiceChange(this.value)"
-                class="text-xs font-mono bg-transparent border border-dashed border-brand-ash dark:border-brand-borderDark px-2 py-0.5 text-brand-ink dark:text-white">
-              </select>
-              <button onclick="toggleContractEditor()"
-                class="text-[10px] font-mono uppercase px-2 py-0.5 border border-dashed border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-brand-ink cursor-pointer">
-                ✎ Edit
-              </button>
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-dashed border-brand-ash/60 dark:border-brand-borderDark/60">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-mono uppercase font-semibold text-brand-orange tracking-wider">Target Contract</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 bg-brand-orange/10 text-brand-orange border border-dashed border-brand-orange/40">Active Spec</span>
             </div>
+            <button onclick="toggleContractEditor()" id="btnToggleContractEditor"
+              class="text-[11px] font-mono uppercase px-2.5 py-1 border border-brand-orange bg-brand-orange/10 text-brand-orange hover:bg-brand-orange hover:text-brand-ink transition font-medium cursor-pointer flex items-center gap-1 shrink-0">
+              <span>✎</span>
+              <span>Edit Schema</span>
+            </button>
           </div>
-          <p id="contractDesc" class="text-xs text-neutral-600 dark:text-neutral-400 mb-2"></p>
+
+          <!-- Service Endpoint Picker (Full Width, No Overflow) -->
+          <div class="mb-2.5">
+            <label class="block text-[10px] font-mono uppercase text-neutral-500 dark:text-neutral-400 mb-1">
+              Upstream Microservice Endpoint:
+            </label>
+            <select id="serviceSelect" onchange="onServiceChange(this.value)"
+              class="w-full text-xs font-mono bg-canvas-cardLight dark:bg-canvas-cardDark border border-dashed border-brand-ash dark:border-brand-borderDark px-2.5 py-1.5 text-brand-ink dark:text-white rounded-none focus:border-brand-orange focus:outline-none cursor-pointer">
+            </select>
+          </div>
+
+          <p id="contractDesc" class="text-xs text-neutral-600 dark:text-neutral-400 mb-2 leading-relaxed"></p>
           <div id="contractFields" class="space-y-1 text-[11px] font-mono"></div>
 
           <!-- COLLAPSIBLE CUSTOM CONTRACT EDITOR -->
-          <div id="contractEditorBox" class="hidden mt-3 pt-3 border-t border-dashed border-brand-ash dark:border-brand-borderDark space-y-2">
-            <div class="text-[10px] font-mono uppercase text-brand-orange">Live Contract Required Fields (JSON map)</div>
-            <textarea id="contractJsonInput" rows="4" spellcheck="false"
-              class="w-full p-2 font-mono text-[11px] bg-canvas-cardLight dark:bg-canvas-cardDark border border-dashed border-brand-ash dark:border-brand-borderDark"></textarea>
-            <button onclick="saveCustomContract()"
-              class="w-full py-1.5 text-xs font-mono uppercase bg-brand-orange text-brand-ink font-semibold cursor-pointer">
-              Save Contract Schema
-            </button>
+          <div id="contractEditorBox" class="hidden mt-3 pt-3 border-t border-dashed border-brand-orange/50 bg-canvas-cardLight dark:bg-canvas-cardDark p-2.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="text-[10px] font-mono uppercase text-brand-orange font-semibold">Live Contract Required Fields (JSON map)</div>
+              <button onclick="toggleContractEditor()" class="text-[10px] font-mono text-neutral-400 hover:text-white cursor-pointer">[ ✕ Close ]</button>
+            </div>
+            <textarea id="contractJsonInput" rows="5" spellcheck="false"
+              class="w-full p-2 font-mono text-[11px] bg-canvas-light dark:bg-canvas-dark border border-dashed border-brand-ash dark:border-brand-borderDark text-brand-ink dark:text-white focus:border-brand-orange focus:outline-none"></textarea>
+            <div class="flex gap-2">
+              <button onclick="saveCustomContract()"
+                class="flex-1 py-1.5 text-xs font-mono uppercase bg-brand-orange text-brand-ink font-semibold hover:opacity-90 transition cursor-pointer">
+                Save &amp; Enforce Contract
+              </button>
+              <button onclick="toggleContractEditor()"
+                class="px-3 py-1.5 text-xs font-mono uppercase border border-dashed border-brand-ash dark:border-brand-borderDark text-neutral-400 hover:text-white cursor-pointer">
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
 
@@ -492,7 +511,12 @@
     }
 
     function toggleContractEditor() {
-      document.getElementById('contractEditorBox').classList.toggle('hidden');
+      const box = document.getElementById('contractEditorBox');
+      const btn = document.getElementById('btnToggleContractEditor');
+      const isHidden = box.classList.toggle('hidden');
+      if (btn) {
+        btn.innerHTML = isHidden ? '<span>✎</span><span>Edit Schema</span>' : '<span>✕</span><span>Close Editor</span>';
+      }
     }
 
     async function saveCustomContract() {
@@ -510,7 +534,10 @@
         if (data.contracts) {
           state.contracts = data.contracts;
           renderContractInfo(serviceId);
-          document.getElementById('contractEditorBox').classList.add('hidden');
+          const box = document.getElementById('contractEditorBox');
+          box.classList.add('hidden');
+          const btn = document.getElementById('btnToggleContractEditor');
+          if (btn) btn.innerHTML = '<span>✎</span><span>Edit Schema</span>';
         }
       } catch (e) {
         alert('Invalid JSON in contract editor: ' + e.message);
