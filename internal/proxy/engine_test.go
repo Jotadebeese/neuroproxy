@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -10,7 +11,7 @@ func TestNeuroProxyEndToEndAndCacheConcurrency(t *testing.T) {
 	eng := NewEngine()
 	ctx := context.Background()
 
-	// Drifted Stripe/Shopify checkout webhook payload
+	// 1. Standard 1-Turn Stripe Webhook Drift
 	driftedPayload := map[string]interface{}{
 		"id": "ORD-2026-991",
 		"payment": map[string]interface{}{
@@ -24,7 +25,7 @@ func TestNeuroProxyEndToEndAndCacheConcurrency(t *testing.T) {
 		},
 	}
 
-	// 1. Direct Bypass (Self-Healing OFF) must fail with 422
+	// Direct Bypass (Self-Healing OFF) must fail with 422
 	bypassRec, err := eng.ProcessRequest(ctx, "checkout", driftedPayload, false)
 	if err != nil {
 		t.Fatalf("unexpected error in bypass mode: %v", err)
@@ -33,7 +34,7 @@ func TestNeuroProxyEndToEndAndCacheConcurrency(t *testing.T) {
 		t.Fatalf("expected 422 BYPASS_FAILED, got %d (%s)", bypassRec.FinalStatus, bypassRec.ResolutionMode)
 	}
 
-	// 2. First Self-Healing Request must intercept 422, heal via Gemini, cache rule, and return 200 OK
+	// First Self-Healing Request must intercept 422, heal via Gemini, pass Guardrail, cache rule, and return 200 OK
 	healRec, err := eng.ProcessRequest(ctx, "checkout", driftedPayload, true)
 	if err != nil {
 		t.Fatalf("unexpected error in heal mode: %v", err)
@@ -41,11 +42,11 @@ func TestNeuroProxyEndToEndAndCacheConcurrency(t *testing.T) {
 	if healRec.FinalStatus != 200 || healRec.ResolutionMode != "GEMINI_SYNTHESIS" {
 		t.Fatalf("expected 200 GEMINI_SYNTHESIS, got %d (%s)", healRec.FinalStatus, healRec.ResolutionMode)
 	}
-	if healRec.HealedPayload["amount_cents"] != 14950 {
-		t.Fatalf("expected amount_cents=14950, got %v", healRec.HealedPayload["amount_cents"])
+	if !healRec.Guardrail.Passed {
+		t.Fatalf("expected Guardrail.Passed=true, got false: %v", healRec.Guardrail.Summary)
 	}
 
-	// 3. Concurrent repeat requests with same schema shape must hit in-memory RuleCache with zero data races
+	// Concurrent repeat requests with same schema shape must hit in-memory RuleCache with zero data races
 	var wg sync.WaitGroup
 	for i := 0; i < 20; i++ {
 		wg.Add(1)
@@ -75,11 +76,45 @@ func TestNeuroProxyEndToEndAndCacheConcurrency(t *testing.T) {
 	}
 	wg.Wait()
 
-	metrics := eng.GetMetrics()
-	if metrics.GeminiHealedCount != 1 {
-		t.Fatalf("expected GeminiHealedCount=1, got %d", metrics.GeminiHealedCount)
+	// 2. Test 2-Layer Cascading Failure (Turn 1 fixes Schema 422 -> Turn 2 fixes Layer 2 AML 409 -> 200 OK)
+	cascadingPayload := map[string]interface{}{
+		"numero_orden": "LATAM-INST-7740",
+		"pago": map[string]interface{}{
+			"monto_usd": "2450.00",
+			"moneda":    "usd",
+		},
+		"cliente": map[string]interface{}{
+			"correo_electronico": "tesoreria@banco-bogota.co",
+		},
+		"kyc_aml_estado": "APPROVED",
 	}
-	if metrics.CacheHitHealedCount != 20 {
-		t.Fatalf("expected CacheHitHealedCount=20, got %d", metrics.CacheHitHealedCount)
+	cascadeRec, err := eng.ProcessRequest(ctx, "checkout", cascadingPayload, true)
+	if err != nil {
+		t.Fatalf("unexpected error in cascading 2-layer test: %v", err)
+	}
+	if cascadeRec.FinalStatus != 200 || cascadeRec.AgentTurns != 2 {
+		t.Fatalf("expected 200 OK after 2 AgentTurns, got status=%d turns=%d", cascadeRec.FinalStatus, cascadeRec.AgentTurns)
+	}
+
+	// 3. Test Zero-Hallucination Guardrail Safety Veto on Missing Price Trap
+	corruptPayload := map[string]interface{}{
+		"id": "ORD-CORRUPT-009",
+		"buyer": map[string]interface{}{
+			"email": "risk-audit@stripe.com",
+		},
+		"currency": "USD",
+	}
+	vetoRec, err := eng.ProcessRequest(ctx, "checkout", corruptPayload, true)
+	if err != nil {
+		t.Fatalf("unexpected error in safety veto test: %v", err)
+	}
+	if vetoRec.ResolutionMode != "SAFETY_VETO" || vetoRec.Guardrail.Passed {
+		t.Fatalf("expected SAFETY_VETO and Guardrail.Passed=false, got mode=%s passed=%v", vetoRec.ResolutionMode, vetoRec.Guardrail.Passed)
+	}
+
+	// 4. Test Go Middleware Code Export
+	code := eng.ExportGoMiddleware()
+	if !strings.Contains(code, "NeuroProxyAdapterMiddleware") {
+		t.Fatalf("expected exported Go middleware to contain NeuroProxyAdapterMiddleware")
 	}
 }

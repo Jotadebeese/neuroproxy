@@ -4,21 +4,21 @@ import "time"
 
 // ServiceContract defines the strict schema contract expected by a downstream microservice.
 type ServiceContract struct {
-	ID             string            `json:"id"`
-	Name           string            `json:"name"`
-	Endpoint       string            `json:"endpoint"`
-	Description    string            `json:"description"`
-	RequiredFields map[string]string `json:"required_fields"`
-	SampleValidJSON string           `json:"sample_valid_json"`
+	ID              string            `json:"id"`
+	Name            string            `json:"name"`
+	Endpoint        string            `json:"endpoint"`
+	Description     string            `json:"description"`
+	RequiredFields  map[string]string `json:"required_fields"`
+	SampleValidJSON string            `json:"sample_valid_json"`
 }
 
 // TraceStep represents a single stage in the NeuroProxy interception & healing pipeline.
 type TraceStep struct {
-	Step        int    `json:"step"`
-	Phase       string `json:"phase"`
-	Status      string `json:"status"` // "ok", "error", "warn", "healed", "cache_hit"
-	Detail      string `json:"detail"`
-	DurationMs  float64 `json:"duration_ms"`
+	Step       int     `json:"step"`
+	Phase      string  `json:"phase"`
+	Status     string  `json:"status"` // "ok", "error", "warn", "healed", "cache_hit", "guardrail"
+	Detail     string  `json:"detail"`
+	DurationMs float64 `json:"duration_ms"`
 }
 
 // FieldMapping describes how a drifted source field maps to the expected target schema field.
@@ -48,14 +48,16 @@ type IncidentRecord struct {
 	ServiceID         string                 `json:"service_id"`
 	ServiceName       string                 `json:"service_name"`
 	SchemaFingerprint string                 `json:"schema_fingerprint"`
-	ResolutionMode    string                 `json:"resolution_mode"` // "GEMINI_SYNTHESIS" | "CACHE_HIT" | "BYPASS_FAILED" | "VALID_PASS"
+	ResolutionMode    string                 `json:"resolution_mode"` // "GEMINI_SYNTHESIS" | "CACHE_HIT" | "BYPASS_FAILED" | "VALID_PASS" | "SAFETY_VETO"
 	OriginalStatus    int                    `json:"original_status"`
 	FinalStatus       int                    `json:"final_status"`
+	AgentTurns        int                    `json:"agent_turns"`
 	UpstreamError     string                 `json:"upstream_error"`
 	OriginalPayload   map[string]interface{} `json:"original_payload"`
 	HealedPayload     map[string]interface{} `json:"healed_payload,omitempty"`
 	UpstreamResponse  map[string]interface{} `json:"upstream_response"`
 	Mappings          []FieldMapping         `json:"mappings,omitempty"`
+	Guardrail         GuardrailReport        `json:"guardrail"`
 	RootCauseAnalysis string                 `json:"root_cause_analysis,omitempty"`
 	GitHubPRTitle     string                 `json:"github_pr_title,omitempty"`
 	GitHubPRDiff      string                 `json:"github_pr_diff,omitempty"`
@@ -72,6 +74,7 @@ type GatewayMetrics struct {
 	GeminiHealedCount    int64   `json:"gemini_healed_count"`
 	CacheHitHealedCount  int64   `json:"cache_hit_healed_count"`
 	DirectBypassFailures int64   `json:"direct_bypass_failures"`
+	GuardrailVetoes      int64   `json:"guardrail_vetoes"`
 	ActiveCachedRules    int     `json:"active_cached_rules"`
 	AvgGeminiLatencyMs   float64 `json:"avg_gemini_latency_ms"`
 	AvgCacheLatencyMs    float64 `json:"avg_cache_latency_ms"`

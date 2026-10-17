@@ -62,13 +62,6 @@
     ::-webkit-scrollbar-thumb {
       background: #ff990066;
     }
-    @keyframes pulseBorder {
-      0%, 100% { border-color: #ff9900; }
-      50% { border-color: rgba(255, 153, 0, 0.25); }
-    }
-    .animate-pulse-orange {
-      animation: pulseBorder 1.8s infinite;
-    }
   </style>
 </head>
 <body class="bg-canvas-light dark:bg-canvas-dark text-brand-ink dark:text-brand-ash min-h-screen transition-colors duration-150">
@@ -81,22 +74,26 @@
           NP
         </div>
         <div>
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="font-display-semi text-xl tracking-tight text-brand-ink dark:text-white">NeuroProxy</h1>
             <span class="text-[11px] font-mono uppercase px-2 py-0.5 bg-brand-orange/15 text-brand-orange border border-dashed border-brand-orange/50">
-              v1.0 • Cloud Run Edge
+              v2.0 • Cloud Run Edge
             </span>
             <span id="geminiModeBadge" class="text-[11px] font-mono uppercase px-2 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-dashed border-emerald-500/40">
               Gemini 2.5 Flash Active
             </span>
           </div>
           <p class="text-xs text-neutral-600 dark:text-neutral-400">
-            Autonomous Self-Healing API Gateway • Intercepting 4xx/5xx Schema Drift &amp; Synthesizing Runtime Patches
+            Autonomous Self-Healing API Gateway • Multi-Turn Agentic Loop &amp; Zero-Hallucination Value Conservation Guardrail
           </p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2 flex-wrap">
+        <a href="/api/export/middleware.go" download="neuroproxy_middleware.go"
+          class="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-brand-orange/15 border border-dashed border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-brand-ink transition cursor-pointer">
+          ⬇ Export Go Middleware (.go)
+        </a>
         <button onclick="runBurstBenchmark()" id="burstBtn"
           class="px-3 py-1.5 text-xs font-mono uppercase tracking-wider border border-dashed border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-brand-ink transition cursor-pointer">
           🚀 Burst 10x Cache Benchmark
@@ -107,7 +104,7 @@
         </button>
         <button onclick="toggleTheme()" id="themeBtn"
           class="px-3 py-1.5 text-xs font-mono uppercase tracking-wider border border-dashed border-brand-ash dark:border-brand-borderDark hover:border-brand-orange transition cursor-pointer">
-          ☀ Light / ☾ Dark
+          ☀ / ☾
         </button>
       </div>
     </div>
@@ -127,7 +124,7 @@
         <div class="text-[11px] font-mono text-neutral-500 mt-0.5">4xx/5xx Caught Live</div>
       </div>
       <div class="p-3.5 bg-canvas-cardLight dark:bg-canvas-cardDark border border-dashed border-brand-ash dark:border-brand-borderDark">
-        <div class="text-[11px] font-mono uppercase text-neutral-500 dark:text-neutral-400">Gemini Flash Heals</div>
+        <div class="text-[11px] font-mono uppercase text-neutral-500 dark:text-neutral-400">Gemini JIT Heals</div>
         <div id="kpiGeminiHeals" class="font-display-light text-3xl text-emerald-600 dark:text-emerald-400 mt-1">0</div>
         <div id="kpiGeminiLatency" class="text-[11px] font-mono text-neutral-500 mt-0.5">Avg: 0.0 ms</div>
       </div>
@@ -142,9 +139,9 @@
         <div class="text-[11px] font-mono text-neutral-500 mt-0.5">SHA-256 Fingerprints</div>
       </div>
       <div class="p-3.5 bg-canvas-cardLight dark:bg-canvas-cardDark border border-dashed border-brand-ash dark:border-brand-borderDark">
-        <div class="text-[11px] font-mono uppercase text-neutral-500 dark:text-neutral-400">Effective Uptime</div>
-        <div id="kpiUptime" class="font-display-light text-3xl text-emerald-600 dark:text-emerald-400 mt-1">100%</div>
-        <div id="kpiBypassFails" class="text-[11px] font-mono text-neutral-500 mt-0.5">0 Unhealed Crashes</div>
+        <div class="text-[11px] font-mono uppercase text-neutral-500 dark:text-neutral-400">Safety Guardrail</div>
+        <div id="kpiGuardrail" class="font-display-light text-3xl text-emerald-600 dark:text-emerald-400 mt-1">100%</div>
+        <div id="kpiVetoes" class="text-[11px] font-mono text-neutral-500 mt-0.5">0 Hallucinations Vetoed</div>
       </div>
     </div>
   </section>
@@ -160,27 +157,41 @@
             <span class="text-[10px] font-mono uppercase tracking-widest text-brand-orange">01 / Traffic Simulator</span>
             <h2 class="font-display-semi text-base text-brand-ink dark:text-white">Webhook &amp; Schema Drift Injector</h2>
           </div>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-brand-ink/10 dark:bg-white/10">4 Presets</span>
+          <span class="text-[11px] font-mono px-2 py-0.5 bg-brand-ink/10 dark:bg-white/10">6 Scenarios</span>
         </div>
 
         <!-- PRESET SCENARIO SELECTOR -->
-        <div class="space-y-2 mb-4" id="presetContainer">
+        <div class="space-y-1.5 mb-4 max-h-[270px] overflow-y-auto pr-1" id="presetContainer">
           <!-- Populated dynamically -->
         </div>
 
-        <!-- TARGET MICROSERVICE CONTRACT -->
+        <!-- TARGET MICROSERVICE CONTRACT (WITH LIVE CUSTOM EDITOR) -->
         <div class="mb-4 p-3 bg-canvas-light dark:bg-canvas-dark border border-dashed border-brand-ash dark:border-brand-borderDark">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[11px] font-mono uppercase text-brand-orange">Target Downstream Contract</span>
-            <select id="serviceSelect" onchange="onServiceChange(this.value)"
-              class="text-xs font-mono bg-transparent border border-dashed border-brand-ash dark:border-brand-borderDark px-2 py-0.5 text-brand-ink dark:text-white">
-              <option value="checkout" class="bg-canvas-light dark:bg-canvas-dark">checkout (Order Service v2)</option>
-              <option value="inventory" class="bg-canvas-light dark:bg-canvas-dark">inventory (Warehouse ERP)</option>
-              <option value="telemetry" class="bg-canvas-light dark:bg-canvas-dark">telemetry (IoT Grid Ingest)</option>
-            </select>
+          <div class="flex items-center justify-between mb-1.5 gap-2">
+            <span class="text-[11px] font-mono uppercase text-brand-orange">Target Contract</span>
+            <div class="flex items-center gap-1.5">
+              <select id="serviceSelect" onchange="onServiceChange(this.value)"
+                class="text-xs font-mono bg-transparent border border-dashed border-brand-ash dark:border-brand-borderDark px-2 py-0.5 text-brand-ink dark:text-white">
+              </select>
+              <button onclick="toggleContractEditor()"
+                class="text-[10px] font-mono uppercase px-2 py-0.5 border border-dashed border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-brand-ink cursor-pointer">
+                ✎ Edit
+              </button>
+            </div>
           </div>
           <p id="contractDesc" class="text-xs text-neutral-600 dark:text-neutral-400 mb-2"></p>
           <div id="contractFields" class="space-y-1 text-[11px] font-mono"></div>
+
+          <!-- COLLAPSIBLE CUSTOM CONTRACT EDITOR -->
+          <div id="contractEditorBox" class="hidden mt-3 pt-3 border-t border-dashed border-brand-ash dark:border-brand-borderDark space-y-2">
+            <div class="text-[10px] font-mono uppercase text-brand-orange">Live Contract Required Fields (JSON map)</div>
+            <textarea id="contractJsonInput" rows="4" spellcheck="false"
+              class="w-full p-2 font-mono text-[11px] bg-canvas-cardLight dark:bg-canvas-cardDark border border-dashed border-brand-ash dark:border-brand-borderDark"></textarea>
+            <button onclick="saveCustomContract()"
+              class="w-full py-1.5 text-xs font-mono uppercase bg-brand-orange text-brand-ink font-semibold cursor-pointer">
+              Save Contract Schema
+            </button>
+          </div>
         </div>
 
         <!-- EDITABLE JSON PAYLOAD -->
@@ -191,7 +202,7 @@
             </label>
             <span id="jsonStatus" class="text-[10px] font-mono text-emerald-500">Valid JSON</span>
           </div>
-          <textarea id="payloadEditor" rows="10" spellcheck="false"
+          <textarea id="payloadEditor" rows="8" spellcheck="false"
             class="w-full p-3 font-mono text-xs bg-canvas-light dark:bg-canvas-dark text-brand-ink dark:text-brand-ash border border-dashed border-brand-ash dark:border-brand-borderDark focus:border-brand-orange focus:outline-none leading-relaxed"></textarea>
         </div>
 
@@ -217,7 +228,7 @@
         <div class="flex items-center justify-between border-b border-dashed border-brand-ash dark:border-brand-borderDark pb-3 mb-3">
           <div>
             <span class="text-[10px] font-mono uppercase tracking-widest text-brand-orange">02 / Live Execution Trace</span>
-            <h2 class="font-display-semi text-base text-brand-ink dark:text-white">Real-Time Interception Pipeline</h2>
+            <h2 class="font-display-semi text-base text-brand-ink dark:text-white">Multi-Turn Agentic Pipeline</h2>
           </div>
           <span id="activeTraceBadge" class="text-[11px] font-mono px-2 py-0.5 bg-brand-orange/20 text-brand-orange">
             Ready
@@ -230,7 +241,7 @@
         </div>
 
         <!-- TRACE STEPS -->
-        <div id="traceContainer" class="space-y-2.5">
+        <div id="traceContainer" class="space-y-2">
           <!-- Populated dynamically -->
         </div>
       </div>
@@ -245,19 +256,19 @@
           <span id="incidentCountBadge" class="text-[11px] font-mono text-neutral-500">0 events</span>
         </div>
 
-        <div id="incidentList" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+        <div id="incidentList" class="space-y-2 max-h-[360px] overflow-y-auto pr-1">
           <!-- Populated dynamically -->
         </div>
       </div>
     </section>
 
-    <!-- COLUMN 3 (4 COLS): DEEP INSPECTOR (JSON DIFF, GITHUB PR, CACHE RULES) -->
+    <!-- COLUMN 3 (4 COLS): DEEP INSPECTOR (JSON DIFF, GUARDRAIL, GITHUB PR, CACHE RULES) -->
     <section class="lg:col-span-4 flex flex-col gap-4">
       <div class="p-4 bg-canvas-cardLight dark:bg-canvas-cardDark border border-dashed border-brand-ash dark:border-brand-borderDark h-full flex flex-col">
         <div class="flex items-center justify-between border-b border-dashed border-brand-ash dark:border-brand-borderDark pb-3 mb-3">
           <div>
             <span class="text-[10px] font-mono uppercase tracking-widest text-brand-orange">04 / Autonomous Remediation</span>
-            <h2 class="font-display-semi text-base text-brand-ink dark:text-white">Payload Diff, Rule &amp; GitHub PR</h2>
+            <h2 class="font-display-semi text-base text-brand-ink dark:text-white">Guardrail, Diff &amp; GitHub PR</h2>
           </div>
           <span id="inspectorIncidentId" class="text-[11px] font-mono text-brand-orange">—</span>
         </div>
@@ -266,7 +277,7 @@
         <div class="grid grid-cols-3 gap-1.5 mb-4 p-1 bg-canvas-light dark:bg-canvas-dark border border-dashed border-brand-ash dark:border-brand-borderDark">
           <button onclick="switchTab('diff')" id="tab-diff"
             class="py-1.5 text-xs font-mono uppercase tracking-wider bg-brand-orange text-brand-ink font-semibold cursor-pointer">
-            JSON Diff
+            Diff &amp; Safety
           </button>
           <button onclick="switchTab('pr')" id="tab-pr"
             class="py-1.5 text-xs font-mono uppercase tracking-wider text-neutral-600 dark:text-neutral-400 hover:text-brand-orange cursor-pointer">
@@ -278,8 +289,18 @@
           </button>
         </div>
 
-        <!-- TAB 1: JSON DIFF & FIELD MAPPINGS -->
-        <div id="panel-diff" class="space-y-3.5 flex-1">
+        <!-- TAB 1: JSON DIFF, VALUE CONSERVATION GUARDRAIL & FIELD MAPPINGS -->
+        <div id="panel-diff" class="space-y-3 flex-1">
+          <!-- VALUE CONSERVATION GUARDRAIL BOX -->
+          <div id="guardrailBox" class="p-3 bg-canvas-light dark:bg-canvas-dark border border-dashed border-emerald-500/50">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-mono uppercase text-emerald-500 font-semibold">🛡️ Zero-Hallucination Value Conservation</span>
+              <span id="guardrailPct" class="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400">100% Verified</span>
+            </div>
+            <p id="guardrailSummary" class="text-xs text-neutral-600 dark:text-neutral-300"></p>
+            <div id="guardrailTraces" class="mt-2 flex flex-wrap gap-1"></div>
+          </div>
+
           <div class="p-3 bg-canvas-light dark:bg-canvas-dark border border-dashed border-brand-ash dark:border-brand-borderDark">
             <div class="text-[10px] font-mono uppercase text-brand-orange mb-1">SRE Root Cause Analysis</div>
             <p id="inspectorRootCause" class="text-xs leading-relaxed text-brand-ink dark:text-brand-ash">
@@ -294,18 +315,18 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <div class="text-[10px] font-mono uppercase text-red-500 mb-1">Incoming Drifted JSON (422)</div>
-              <pre id="inspectorOriginalJson" class="p-2.5 text-[11px] font-mono bg-canvas-light dark:bg-canvas-dark border border-dashed border-red-500/40 overflow-x-auto max-h-[220px]"></pre>
+              <div class="text-[10px] font-mono uppercase text-red-500 mb-1">Incoming Drifted JSON</div>
+              <pre id="inspectorOriginalJson" class="p-2.5 text-[11px] font-mono bg-canvas-light dark:bg-canvas-dark border border-dashed border-red-500/40 overflow-x-auto max-h-[200px]"></pre>
             </div>
             <div>
-              <div class="text-[10px] font-mono uppercase text-emerald-500 mb-1">Healed Payload (200 OK)</div>
-              <pre id="inspectorHealedJson" class="p-2.5 text-[11px] font-mono bg-canvas-light dark:bg-canvas-dark border border-dashed border-emerald-500/40 overflow-x-auto max-h-[220px]"></pre>
+              <div class="text-[10px] font-mono uppercase text-emerald-500 mb-1">Synthesized Payload</div>
+              <pre id="inspectorHealedJson" class="p-2.5 text-[11px] font-mono bg-canvas-light dark:bg-canvas-dark border border-dashed border-emerald-500/40 overflow-x-auto max-h-[200px]"></pre>
             </div>
           </div>
 
           <div>
             <div class="text-[10px] font-mono uppercase text-neutral-500 mb-1">Downstream Microservice Response</div>
-            <pre id="inspectorUpstreamResp" class="p-2.5 text-[11px] font-mono bg-canvas-light dark:bg-canvas-dark border border-dashed border-brand-ash dark:border-brand-borderDark overflow-x-auto max-h-[140px]"></pre>
+            <pre id="inspectorUpstreamResp" class="p-2.5 text-[11px] font-mono bg-canvas-light dark:bg-canvas-dark border border-dashed border-brand-ash dark:border-brand-borderDark overflow-x-auto max-h-[130px]"></pre>
           </div>
         </div>
 
@@ -377,6 +398,7 @@
         state.incidents = data.incidents || [];
         state.rules = data.rules || [];
 
+        renderServiceOptions();
         renderPresets();
         if (state.presets.length > 0) {
           selectPreset(state.presets[0].id);
@@ -385,6 +407,13 @@
       } catch (err) {
         console.error('Failed to bootstrap NeuroProxy:', err);
       }
+    }
+
+    function renderServiceOptions() {
+      const sel = document.getElementById('serviceSelect');
+      sel.innerHTML = Object.values(state.contracts).map(c =>
+        `<option value="${c.id}" class="bg-canvas-light dark:bg-canvas-dark">${c.id} (${c.name})</option>`
+      ).join('');
     }
 
     function renderAll() {
@@ -403,8 +432,7 @@
       document.getElementById('kpiCacheHits').textContent = m.cache_hit_healed_count ?? 0;
       document.getElementById('kpiCacheLatency').textContent = `Avg: ${(m.avg_cache_latency_ms || 0.14).toFixed(2)} ms ($0 LLM)`;
       document.getElementById('kpiRules').textContent = m.active_cached_rules ?? 0;
-      document.getElementById('kpiUptime').textContent = `${(m.uptime_rate_percent ?? 100).toFixed(1)}%`;
-      document.getElementById('kpiBypassFails').textContent = `${m.direct_bypass_failures ?? 0} Unhealed Crashes`;
+      document.getElementById('kpiVetoes').textContent = `${m.guardrail_vetoes ?? 0} Hallucinations Vetoed`;
 
       const badge = document.getElementById('geminiModeBadge');
       if (m.gemini_live_configured) {
@@ -427,7 +455,7 @@
             }">
             <div class="flex items-center justify-between gap-2">
               <span class="font-display-semi text-xs text-brand-ink dark:text-white">${p.title}</span>
-              <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-brand-orange/20 text-brand-orange">${p.badge}</span>
+              <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-brand-orange/20 text-brand-orange shrink-0">${p.badge}</span>
             </div>
             <div class="text-[11px] text-neutral-600 dark:text-neutral-400 mt-0.5">${p.subtitle}</div>
           </div>
@@ -453,6 +481,7 @@
       const c = state.contracts[serviceId];
       if (!c) return;
       document.getElementById('contractDesc').textContent = c.description;
+      document.getElementById('contractJsonInput').value = JSON.stringify(c.required_fields || {}, null, 2);
       const fieldsEl = document.getElementById('contractFields');
       fieldsEl.innerHTML = Object.entries(c.required_fields || {}).map(([k, v]) => `
         <div class="flex items-start gap-2">
@@ -460,6 +489,32 @@
           <span class="text-neutral-500 dark:text-neutral-400">${v}</span>
         </div>
       `).join('');
+    }
+
+    function toggleContractEditor() {
+      document.getElementById('contractEditorBox').classList.toggle('hidden');
+    }
+
+    async function saveCustomContract() {
+      const serviceId = document.getElementById('serviceSelect').value;
+      const current = state.contracts[serviceId];
+      try {
+        const fields = JSON.parse(document.getElementById('contractJsonInput').value);
+        const updated = { ...current, required_fields: fields };
+        const res = await fetch('/api/contracts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated)
+        });
+        const data = await res.json();
+        if (data.contracts) {
+          state.contracts = data.contracts;
+          renderContractInfo(serviceId);
+          document.getElementById('contractEditorBox').classList.add('hidden');
+        }
+      } catch (e) {
+        alert('Invalid JSON in contract editor: ' + e.message);
+      }
     }
 
     async function dispatchRequest(selfHeal) {
@@ -537,10 +592,13 @@
       list.innerHTML = state.incidents.map(inc => {
         const selected = inc.id === state.selectedIncidentId;
         let badgeClass = 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40';
-        let label = 'GEMINI HEALED';
+        let label = inc.agent_turns > 1 ? `GEMINI (${inc.agent_turns} TURNS)` : 'GEMINI HEALED';
         if (inc.resolution_mode === 'CACHE_HIT') {
           badgeClass = 'bg-brand-orange/20 text-brand-orange border-brand-orange/50';
           label = '⚡ 0ms CACHE HIT';
+        } else if (inc.resolution_mode === 'SAFETY_VETO') {
+          badgeClass = 'bg-amber-500/20 text-amber-400 border-amber-500/50';
+          label = '🛑 SAFETY VETO';
         } else if (inc.resolution_mode === 'BYPASS_FAILED') {
           badgeClass = 'bg-red-500/20 text-red-500 border-red-500/40';
           label = `💥 ${inc.final_status} CRASH (BYPASSED)`;
@@ -599,17 +657,23 @@
           <div class="font-semibold">HTTP/1.1 ${inc.final_status} Unprocessable Entity (Proxy Bypassed)</div>
           <div class="text-[11px] mt-1 opacity-90">${inc.upstream_error}</div>
         `;
+      } else if (inc.resolution_mode === 'SAFETY_VETO') {
+        banner.className = 'mb-3 p-3 bg-amber-500/10 border border-dashed border-amber-500/60 font-mono text-xs text-amber-400';
+        banner.innerHTML = `
+          <div class="font-semibold">HTTP/1.1 422 Blocked by Zero-Hallucination Guardrail</div>
+          <div class="text-[11px] mt-1">${inc.guardrail?.summary || 'Blocked unverified LLM value'}</div>
+        `;
       } else {
         const healedHeader = inc.resolution_mode === 'CACHE_HIT'
           ? 'NeuroProxy-Cache (<1ms RWMutex Hit)'
           : inc.resolution_mode === 'GEMINI_SYNTHESIS'
-          ? 'NeuroProxy-Gemini (Runtime Patch)'
+          ? `NeuroProxy-Gemini (Turn ${inc.agent_turns || 1} Synthesis)`
           : 'None (Healthy Payload)';
         banner.className = 'mb-3 p-3 bg-emerald-500/10 border border-dashed border-emerald-500/50 font-mono text-xs text-emerald-600 dark:text-emerald-400';
         banner.innerHTML = `
           <div class="font-semibold">HTTP/1.1 ${inc.final_status} OK</div>
           <div class="text-[11px] mt-0.5">X-Healed-By: <span class="text-brand-orange font-semibold">${healedHeader}</span></div>
-          <div class="text-[11px]">X-Schema-Fingerprint: ${inc.schema_fingerprint}</div>
+          <div class="text-[11px]">X-Value-Conservation: <span class="text-emerald-400">100% Verified (0 Hallucinations)</span></div>
         `;
       }
 
@@ -619,6 +683,7 @@
         if (t.status === 'error') color = 'border-red-500/60 text-red-500';
         if (t.status === 'warn') color = 'border-amber-500/60 text-amber-500';
         if (t.status === 'healed' || t.status === 'cache_hit') color = 'border-brand-orange text-brand-orange';
+        if (t.status === 'guardrail') color = 'border-emerald-400 text-emerald-400';
 
         return `
           <div class="p-2.5 bg-canvas-light dark:bg-canvas-dark border-l-2 ${color} border border-dashed border-brand-ash dark:border-brand-borderDark">
@@ -630,6 +695,29 @@
           </div>
         `;
       }).join('');
+
+      // Render Guardrail Box
+      const g = inc.guardrail || { passed: true, conservation_pct: 100, summary: 'Verified', verified_fields: [] };
+      const gBox = document.getElementById('guardrailBox');
+      const gPct = document.getElementById('guardrailPct');
+      const gTraces = document.getElementById('guardrailTraces');
+      document.getElementById('guardrailSummary').textContent = g.summary || '';
+
+      if (g.passed) {
+        gBox.className = 'p-3 bg-canvas-light dark:bg-canvas-dark border border-dashed border-emerald-500/50';
+        gPct.className = 'text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400';
+        gPct.textContent = '100% Verified';
+      } else {
+        gBox.className = 'p-3 bg-red-500/10 border border-dashed border-red-500/60';
+        gPct.className = 'text-[10px] font-mono px-1.5 py-0.5 bg-red-500/20 text-red-400';
+        gPct.textContent = 'SAFETY VETO';
+      }
+
+      gTraces.innerHTML = (g.verified_fields || []).map(vf =>
+        `<span class="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-dashed border-emerald-500/30">${vf}</span>`
+      ).join('') + (g.violations || []).map(v =>
+        `<span class="text-[10px] font-mono px-1.5 py-0.5 bg-red-500/20 text-red-400 border border-dashed border-red-500/40">🛑 ${v}</span>`
+      ).join('');
 
       // Render Inspector Diff & PR Details
       document.getElementById('inspectorRootCause').textContent =

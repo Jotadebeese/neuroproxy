@@ -162,7 +162,7 @@ func applyTransform(val interface{}, transform string) interface{} {
 			return v
 		case string:
 			u := strings.ToUpper(strings.TrimSpace(v))
-			return u == "TRUE" || u == "1" || u == "ONLINE" || u == "OK" || u == "HEALTHY" || u == "ACTIVE"
+			return u == "TRUE" || u == "1" || u == "ONLINE" || u == "OK" || u == "HEALTHY" || u == "ACTIVE" || u == "APPROVED" || u == "VERIFIED" || u == "PASS" || u == "YES"
 		case float64:
 			return v > 0
 		}
