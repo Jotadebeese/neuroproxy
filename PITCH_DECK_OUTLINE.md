@@ -7,7 +7,6 @@
 ## 1. Portal Submission Fields (Copy-Paste Ready)
 
 * **Team Name:** `Zenith Systems`
-* **Team Members:** Juan Diego Bedoya & Kevin Juan Carlos
 * **Project Title:** `NeuroProxy — Autonomous Self-Healing API Gateway`
 * **Challenge Track:** `Future of Work & Enterprise Productivity` *(Developer Infrastructure & Autonomous SRE)*
 * **Brief Description (for Hack2skill Submission Form):**
@@ -20,7 +19,7 @@
 ### Slide 1: Title & Team
 * **Project Name:** **NeuroProxy** — Autonomous Self-Healing API Gateway
 * **Tagline:** Zero-Downtime API Resilience on Google Cloud Run Powered by Gemini 2.5 Flash
-* **Team:** **Zenith Systems** (Juan Diego Bedoya & Kevin Juan Carlos)
+* **Team:** **Zenith Systems**
 * **Track:** Future of Work & Enterprise Productivity
 
 ### Slide 2: The Problem — Why APIs Break at 3:00 AM

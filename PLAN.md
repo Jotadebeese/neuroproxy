@@ -1,6 +1,6 @@
 # NeuroProxy — AI Builder Cup 2026 Master Plan & Execution Blueprint
 
-> **Team Name:** `Zenith Systems` (Juan Bedoya & Kevin Juan Carlos)  
+> **Team Name:** `Zenith Systems`  
 > **Competition:** Google Cloud AI Builder Cup 2026 (JAPAC / Hack2skill)  
 > **Challenge Track:** Future of Work & Enterprise Productivity *(Autonomous Developer Infrastructure & SRE)*  
 > **Hard Submission Deadline:** Sunday, October 18, 2026 @ 11:59 PM IST (**Monday, Oct 19 @ 1:29 AM ICT Thailand Time**)  
@@ -68,7 +68,7 @@ To guarantee **zero CORS issues, zero multi-service networking bugs, and 100% up
 ## 3. Step-by-Step Weekend Execution Plan
 
 ### Phase 1: Core Engine & UI Build (Saturday Afternoon — Today)
-- [x] **Step 1.1:** Confirm 2-person team on Hack2skill (`Zenith Systems` — Juan Bedoya + Kevin Juan Carlos).
+- [x] **Step 1.1:** Confirm team on Hack2skill (`Zenith Systems`).
 - [ ] **Step 1.2:** Build the **Go Self-Healing Reverse Proxy Engine** (`main.go`, `proxy.go`, `healer.go`, `cache.go`, `upstreams.go`):
   - Strict simulated downstream microservices (`checkout`, `inventory`, `telemetry`).
   - Structural schema fingerprinting (`SHA-256` of key paths & value types).
@@ -84,19 +84,19 @@ To guarantee **zero CORS issues, zero multi-service networking bugs, and 100% up
 
 ### Phase 3: Demo Video, Pitch Deck & GitHub Repo (Sunday Morning / Afternoon)
 - [ ] **Step 3.1:** Push clean code + `README.md` + `PLAN.md` + `Dockerfile` to a **Public GitHub Repository**.
-- [ ] **Step 3.2:** Fill out the **Official Hack2skill Pitch Deck Template** (can coordinate with Kevin on slides/review).
+- [ ] **Step 3.2:** Fill out the **Official Hack2skill Pitch Deck Template**.
 - [ ] **Step 3.3:** Record the **2-Minute Screen Demo Video** (script below).
 - [ ] **Step 3.4:** Submit all 5 items on Hack2skill by **Sunday, Oct 18 @ 7:30 PM ICT** (6 hours ahead of the final deadline).
 
 ---
 
-## 4. Team Coordination (Juan & Kevin)
+## 4. Workstream Breakdown
 
-| Workstream | Owner | Deliverable |
-|---|---|---|
-| **Go Proxy Engine, Gemini Integration & Cloud Run Deployment** | **Juan** | Live Cloud Run URL (`https://neuroproxy-...a.run.app`) & Public GitHub Repo |
-| **Mission Control Dashboard UI & Demo Recording** | **Juan** | Next.js 15 Dashboard + 2-Minute Demo Video |
-| **Pitch Deck Slides, Architecture Polish & QA Testing** | **Kevin & Juan** | Prescribed Hack2skill Pitch Deck PDF/PPTX + Incognito Stress Testing |
+| Workstream | Deliverable |
+|---|---|
+| **Go Proxy Engine, Gemini Integration & Cloud Run Deployment** | Live Cloud Run URL (`https://neuroproxy-...a.run.app`) & Public GitHub Repo |
+| **Mission Control Dashboard UI & Demo Recording** | Next.js 15 Dashboard + 2-Minute Demo Video |
+| **Pitch Deck Slides, Architecture Polish & QA Testing** | Prescribed Hack2skill Pitch Deck PDF/PPTX + Incognito Stress Testing |
 
 ---
 

@@ -1,6 +1,6 @@
 # ⚡ NeuroProxy — Autonomous Self-Healing API Gateway
 
-> **Google Cloud AI Builder Cup 2026 Submission** — Team **Zenith Systems** (Juan Diego Bedoya & Kevin Juan Carlos)  
+> **Google Cloud AI Builder Cup 2026 Submission** — Team **Zenith Systems**  
 > **Track:** Future of Work & Enterprise Productivity *(Autonomous Developer Infrastructure & SRE)*  
 > **Stack:** Go 1.23 (`net/http`, `sync.RWMutex`), Google Gemini (`gemini-2.5-flash`), Next.js 15 / React 19 / Tailwind CSS v4, Google Cloud Run
 
