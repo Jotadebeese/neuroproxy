@@ -1,10 +1,13 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 )
+
+var defaultHTTPForwarder = NewHTTPForwarder()
 
 // GetServiceContracts returns the default target microservice contracts protected by NeuroProxy.
 func GetServiceContracts() map[string]ServiceContract {
@@ -52,9 +55,13 @@ func GetServiceContracts() map[string]ServiceContract {
 	}
 }
 
-// ValidateAndExecuteUpstream simulates a strict production microservice validating an incoming payload.
-// Supports built-in 2-layer services as well as user-defined custom contracts.
+// ValidateAndExecuteUpstream simulates a strict production microservice or forwards to a live HTTP endpoint.
+// Supports real HTTP endpoints, built-in 2-layer services, as well as user-defined custom contracts.
 func ValidateAndExecuteUpstream(contract ServiceContract, payload map[string]interface{}) (int, map[string]interface{}, string) {
+	if strings.HasPrefix(contract.Endpoint, "http://") || strings.HasPrefix(contract.Endpoint, "https://") {
+		res := defaultHTTPForwarder.ForwardRequest(context.Background(), contract.Endpoint, payload, nil)
+		return res.StatusCode, res.Body, res.ErrorMsg
+	}
 	switch contract.ID {
 	case "checkout":
 		return validateCheckout(payload)

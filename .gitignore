@@ -1,6 +1,6 @@
 # Binaries
-neuroproxy
-neuroproxy.exe
+/neuroproxy
+/neuroproxy.exe
 *.exe
 *.dll
 *.so

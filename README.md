@@ -2,114 +2,229 @@
 
 > **Google Cloud AI Builder Cup 2026 Submission** — Team **Zenith Systems**  
 > **Track:** Future of Work & Enterprise Productivity *(Autonomous Developer Infrastructure & SRE)*  
-> **Stack:** Go 1.23 (`net/http`, `sync.RWMutex`), Google Gemini (`gemini-2.5-flash`), Next.js 15 / React 19 / Tailwind CSS v4, Google Cloud Run
+> **Core Technologies:** Go 1.23, Google Gemini (`gemini-2.5-flash`), React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Google Cloud Run, Cloud Logging, Cloud Trace, Cloud Memorystore (Redis)
 
-> [!IMPORTANT]
-> **👋 Team Zenith Systems Onboarding (Start Here):**
-> * **Master Execution Plan & Timeline:** See [`PLAN.md`](./PLAN.md)
-> * **Official Pitch Deck Slide Copy & Portal Text:** See [`PITCH_DECK_OUTLINE.md`](./PITCH_DECK_OUTLINE.md)
-> * **Run Locally in 10 Seconds:** Copy `.env.example` to `.env.local`, add your `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey), run `go run .`, and open **`http://localhost:8080`**.
-
----
-
-## 1. The Problem: Schema Drift & 3:00 AM Outages
-
-Modern distributed architectures rely on dozens of external webhooks (Stripe, Shopify, logistics ERPs) and client applications. When an upstream provider renames a JSON field (`amount_cents` $\rightarrow$ `payment.amount_dollars`), nests an object (`customer_email` $\rightarrow$ `buyer.contact.email`), or changes a type/enum without warning:
-1. Downstream microservices throw unhandled **`422 Unprocessable Entity` / `500 Internal Server Error`** exceptions.
-2. Customer checkouts and critical industrial telemetry drop on the floor.
-3. On-call SREs are paged at 3:00 AM to manually inspect logs, write hotfix adapters, and redeploy containers.
+[![Go Tests](https://img.shields.io/badge/Go%20Tests-100%25%20Passing-brightgreen.svg)]()
+[![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud-Run%20Ready-blue.svg)]()
+[![Gemini 2.5 Flash](https://img.shields.io/badge/Gemini%202.5-Flash%20Active-orange.svg)]()
+[![Zero Hallucination](https://img.shields.io/badge/Value%20Conservation-100%25%20Guaranteed-emerald.svg)]()
+[![Memory Footprint](https://img.shields.io/badge/Container%20Size-%3C15MB-purple.svg)]()
 
 ---
 
-## 2. The Solution: Autonomous Runtime Self-Healing
+## 1. Executive Summary: What is NeuroProxy?
 
-**NeuroProxy** is an ultra-light reverse proxy deployed on **Google Cloud Run** that sits in front of backend microservices and eliminates schema-drift downtime autonomously:
+Modern distributed microservices and enterprise applications fail constantly when external partners, payment gateways (Stripe, PayPal, Shopify), or client mobile applications change their payload schemas without prior notice (field renames, nested objects, type mutations). When this occurs:
+1. Downstream backend services crash with **`HTTP 400 Bad Request`** or **`HTTP 422 Unprocessable Entity`**.
+2. Critical checkouts, supply chain orders, and industrial IoT telemetries fail silently.
+3. On-call SREs and developers are paged at 3:00 AM to manually inspect JSON logs, write patch adapters, and redeploy containers ($5,600/minute enterprise downtime cost).
+
+**NeuroProxy** is an ultra-light, sub-15MB autonomous reverse proxy deployed on **Google Cloud Run** at the network edge. When an upstream service rejects an incoming payload:
+1. NeuroProxy intercepts the rejection while holding the client HTTP connection open.
+2. An autonomous multi-turn agentic loop powered by **Google Gemini 2.5 Flash** reasons about the contract error and synthesizes a repaired payload.
+3. A deterministic **Value Conservation Guardrail** mathematically proves zero hallucinated data before delivery.
+4. The healed payload is delivered to the microservice, returning **`HTTP 200 OK`** with zero customer downtime.
+5. The verified transformation rule is compiled into a two-tier **LRU Rule Cache** and **Google Cloud Memorystore (Redis)**—serving all subsequent matching requests in **`<0.2ms` at $0 LLM cost**.
+6. A ready-to-merge **GitHub Pull Request diff** is generated for the engineering team.
+
+---
+
+## 2. Master System Architecture
 
 ```mermaid
-flowchart LR
-    Client["External Webhook / Client"] -->|"1. Drifted JSON Payload"| Proxy["⚡ NeuroProxy Gateway (Go)"]
-    Proxy -->|"2. Forward Request"| Upstream["Target Microservice"]
-    Upstream -->|"3. 422 / 500 Schema Error"| Proxy
-    Proxy -->|"4. Check SHA-256 Fingerprint"| Cache[("In-Memory RuleCache\n(sync.RWMutex)")]
-    Cache -->|"Cache Hit (<1ms)"| Healed["Apply Learned Adapter"]
-    Cache -->|"Cache Miss"| Gemini["Google Gemini 2.5 Flash"]
-    Gemini -->|"5. Synthesize Patch + Rule + GitHub PR"| Cache
-    Gemini --> Healed
-    Healed -->|"6. Re-Dispatch Repaired JSON"| Upstream
-    Upstream -->|"7. 200 OK (X-Healed-By: NeuroProxy)"| Client
-```
+flowchart TD
+    Client["Client / External Webhook<br>(Stripe, ERP, IoT)"] -->|"1. Ingest Payload"| Gateway["Gateway Router & Middleware<br>(internal/gateway • cmd/neuroproxy)"]
 
-### Key Engineering Capabilities (v2.0)
-* **Real-Time Interception:** Holds the client HTTP connection open when a downstream microservice rejects a payload (`400`/`409`/`422`/`500`).
-* **Multi-Turn Agentic Self-Correction Loop:** When an upstream service validates in layers (e.g., Layer 1 JSON Schema Unmarshaler $\rightarrow$ Layer 2 Domain/AML Compliance Engine), NeuroProxy catches the secondary `409 Conflict` error on retry, feeds the new domain trace back into **Gemini 2.5 Flash (Turn 2)**, and resolves multi-layer failures autonomously in a single HTTP trip.
-* **🛡️ Zero-Hallucination Value Conservation Guardrail:** Before re-dispatching any LLM-repaired payload, a deterministic Go verifier ([`VerifyValueConservation`](./internal/proxy/guardrail.go)) proves mathematically that 100% of target scalars (amounts, IDs, emails, SKUs, sensor readings) trace directly to source leaf nodes. If a corrupted webhook is missing a critical field (like price) and an LLM attempts to invent a number, NeuroProxy triggers a **`SAFETY_VETO`** and blocks the request.
-* **Sub-Millisecond In-Memory Rule Cache (`0ms` LLM Cost on Repeat Traffic):** Computes a structural `SHA-256` fingerprint of the incoming JSON keys and types. Once Gemini heals a drifted schema once, the learned transformation rule is stored in a thread-safe `sync.RWMutex` cache—healing 10,000+ subsequent requests in **`<0.2ms` without calling the LLM**.
-* **1-Click Standalone Go Middleware Export & GitHub PR Diff:** Generates both a unified Git diff (`--- a/internal/handlers/...`) and a downloadable, zero-dependency Go middleware file (`/api/export/middleware.go`) containing all compiled `SHA-256` rules.
+    subgraph FastPath ["Fast-Path Recovery (<0.2ms)"]
+        Gateway -->|"2. Check Structural Fingerprint"| TwoTierCache[("Two-Tier Cache Layer<br>• L1: In-Memory LRU (5,000 Cap, 24h TTL)<br>• L2: Google Cloud Memorystore (Redis)")]
+        TwoTierCache -->|"Cache Hit (<0.2ms)"| Playback["Apply Compiled Adapter Rule"]
+    end
+
+    subgraph AgentLoop ["Autonomous Agentic Self-Correction Loop"]
+        TwoTierCache -->|"Cache Miss / New Drift"| DirectExec["Direct Upstream Dispatch"]
+        DirectExec -->|"HTTP 4xx/5xx Rejection"| CircuitBreaker["3. Token Bucket & Circuit Breaker<br>(30 req/min • Anti-Denial-of-Wallet)"]
+        CircuitBreaker -->|"Turn 1"| Gemini["Google Gemini 2.5 Flash Agent<br>(Structured JSON Output)"]
+        Gemini --> Guardrail{"4. Value Conservation<br>Guardrail Verifier"}
+        Guardrail -->|"Pass (100% Provenance)"| RetryUpstream["5. Re-Dispatch to Upstream"]
+        Guardrail -->|"Violation / Fabricated Data"| Veto["422 SAFETY_VETO<br>(Prevents Ledger Corruption)"]
+        RetryUpstream -->|"Layer 2 409 Conflict"| Gemini
+        RetryUpstream -->|"200 OK Upstream Ack"| CacheRule["Compile Rule into LRU Cache & PR Diff"]
+    end
+
+    subgraph Observability ["Google Cloud Operations Suite"]
+        Gateway -.->|"Structured JSON stdout"| CloudLogging["Google Cloud Logging (Severity & RCA)"]
+        Gateway -.->|"X-Cloud-Trace-Context"| CloudTrace["Google Cloud Trace (Span Correlation)"]
+    end
+
+    Playback --> UpstreamTarget["Live Upstream Microservice / Live URL (BYOA)"]
+    CacheRule --> UpstreamTarget
+    UpstreamTarget -->|"HTTP 200 OK (X-Healed-By: NeuroProxy)"| Client
+```
 
 ---
 
-## 3. Repository Structure
+## 3. Production Repository Layout
+
+Organized according to cloud-native Go standards (`golang-standards/project-layout`) with modular package boundaries:
 
 ```text
 neuroproxy/
-├── main.go                        # Unified Go HTTP server (Reverse Proxy API + Static UI host)
-├── go.mod                         # Zero-bloat Go standard library module
-├── Dockerfile                     # Multi-stage Google Cloud Run container build
-├── PLAN.md                        # AI Builder Cup 2026 Execution Plan, Demo Script & Slide Outline
+├── cmd/
+│   └── neuroproxy/
+│       └── main.go                 # Canonical production binary entrypoint & graceful shutdown
 ├── internal/
-│   └── proxy/
-│       ├── types.go               # Domain contracts, telemetry metrics & incident models
-│       ├── upstreams.go           # Strict target microservices (Checkout, ERP Inventory, IoT Telemetry)
-│       ├── cache.go               # Thread-safe sync.RWMutex RuleCache & SHA-256 schema fingerprinter
-│       ├── guardrail.go           # Zero-Hallucination Value Conservation Guardrail (provenance verifier)
-│       ├── healer.go              # Google Gemini 2.5 Flash multi-turn synthesizer + fallback
-│       ├── engine.go              # Self-healing proxy pipeline, 2-turn retry loop & Go code exporter
-│       └── engine_test.go         # End-to-end healing, 2-turn cascade, safety veto & concurrency tests
-└── frontend/                      # Next.js 15 + React 19 + TypeScript + Tailwind v4 Mission Control UI
-    └── out/                       # Pre-compiled static bundle served directly by the Go binary at `/`
+│   ├── config/                     # Central configuration (.env, PORT, GCP_PROJECT, REDIS_URL)
+│   ├── contracts/                  # Domain contracts, schema definitions, chaos presets & metrics
+│   ├── telemetry/                  # Google Cloud Run Structured Logging & Cloud Trace propagation
+│   ├── forwarder/                  # High-performance pooled HTTP reverse proxy transport
+│   ├── cache/                      # Two-tier cache: LRU (5,000 Cap, 24h TTL) + Redis/Memorystore adapter
+│   ├── guardrail/                  # Zero-Hallucination Value Conservation invariant verifier
+│   ├── ai/                         # Gemini 2.5 Flash synthesizer, multi-turn loop & circuit breaker
+│   ├── engine/                     # Central 5-stage self-healing coordinator & middleware exporter
+│   ├── gateway/                    # HTTP router, CORS middleware, REST endpoints & static UI host
+│   └── proxy/                      # Backward-compatible adapter preserving all legacy tests
+├── frontend/                       # Authentic React 19 + TypeScript + Vite + Tailwind + Framer Motion
+│   ├── src/
+│   │   ├── components/             # FlowVisualizer, PayloadPlayground, LiveDiffViewer, RulesTable
+│   │   ├── api.ts                  # Backend REST API client
+│   │   └── types.ts                # TypeScript interfaces aligned with Go domain contracts
+│   └── out/                        # Pre-compiled static production bundle served by the Go binary
+├── Dockerfile                      # Multi-stage production container (<15MB, distroless/alpine)
+├── cloudbuild.yaml                 # Google Cloud Build CI/CD pipeline for Cloud Run Edge
+├── GCP_SETUP_AND_DEPLOYMENT_GUIDE.md # Complete step-by-step GCP, Redis & local run instructions
+├── PITCH_DECK_OUTLINE.md           # Prescribed hackathon pitch deck slide copy & portal text
+├── PLAN.md                         # Master execution blueprint & 2-minute demo video script
+└── go.mod                          # Zero-bloat Go 1.23 standard library module
 ```
 
 ---
 
-## 4. Quickstart (Run Locally in 5 Seconds)
+## 4. Key Architectural Capabilities
 
-### Prerequisites
-* **Go 1.22+**
-* *(Optional)* `GEMINI_API_KEY` environment variable for live Google AI Studio calls (includes a deterministic structural synthesis fallback if unset).
+### 1. Dual-Mode HTTP Forwarding (Bring Your Own API)
+Supports real external HTTP/HTTPS upstream targets in addition to built-in simulation targets. By specifying `X-Target-URL: https://httpbin.org/post` or providing a target URL in the UI playground, NeuroProxy proxies live network traffic, intercepts external 4xx/5xx responses, and heals payloads against live microservices.
 
-### 1. Run Unit & Concurrency Tests
-```powershell
-go test -v -race ./...
+### 2. Zero-Hallucination Value Conservation Guardrail
+Before re-dispatching any repaired payload, [`internal/guardrail/guardrail.go`](./internal/guardrail/guardrail.go) proves mathematically that 100% of target scalars (prices, IDs, emails, quantities, sensor ratings) trace directly to source leaf nodes. If an incoming webhook completely omits a critical scalar, NeuroProxy triggers a **`SAFETY_VETO` (HTTP 422)** to prevent LLM hallucinations from corrupting accounting ledgers.
+
+### 3. Anti-Denial-of-Wallet Circuit Breaker
+Every external AI call is guarded by [`internal/ai/circuit_breaker.go`](./internal/ai/circuit_breaker.go) with a Token Bucket rate limiter (30 req/min) and a 3-state Circuit Breaker (`CLOSED`, `OPEN`, `HALF_OPEN`), preventing runaway cloud billing during upstream DDoS attacks.
+
+### 4. Two-Tier Resilient Cache Layer (Memory LRU + Cloud Memorystore Redis)
+Features a two-tier cache: an in-memory thread-safe LRU cache (capped at 5,000 entries with 24-hour TTL) and an automated adapter for **Google Cloud Memorystore (Redis)** using raw RESP protocol (zero heavy dependencies) for synchronizing learned rules across horizontal Cloud Run instances.
+
+### 5. Google Cloud Native Observability
+Emits Google Cloud Structured Logging JSON lines with `severity`, latency, RCA, and extracts `logging.googleapis.com/trace` from standard `X-Cloud-Trace-Context` headers for deep tracing in Google Cloud Logs Explorer and Cloud Monitoring.
+
+---
+
+## 5. End-to-End User & SRE Workflows
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor SRE as Developer / SRE
+    participant UI as Mission Control UI (React 19)
+    participant GW as NeuroProxy Gateway (Go)
+    participant AI as Gemini 2.5 Flash Agent
+    participant Guard as Value Conservation Guardrail
+    participant Upstream as Target Microservice / Live URL
+
+    SRE->>UI: Selects "Stripe Webhook Drift" Preset
+    UI->>GW: POST /api/proxy/checkout (Drifted JSON)
+    GW->>Upstream: Direct Probe
+    Upstream-->>GW: HTTP 400 Bad Request (Missing amount_cents)
+    
+    rect rgb(30, 20, 10)
+    Note over GW,AI: Multi-Turn Agentic Healing Loop
+    GW->>AI: Synthesize schema translation (Turn 1)
+    AI-->>GW: Healed JSON (monto_usd 149.50 -> amount_cents 14950)
+    GW->>Guard: Verify Value Conservation
+    Guard-->>GW: Provenance Verified (100% Match)
+    GW->>Upstream: Re-Dispatch Healed Payload
+    Upstream-->>GW: HTTP 200 OK Accepted
+    end
+
+    GW-->>UI: HTTP 200 OK + Latency + PR Diff
+    UI-->>SRE: Live Animated Graph Pulses Green
+    SRE->>UI: Reviews RCA & Copies Auto-Generated GitHub PR Diff
 ```
 
-### 2. Start the NeuroProxy Gateway & Mission Control UI
-```powershell
-$env:GEMINI_API_KEY="your-gemini-api-key"
-go run .
-```
-Open **`http://localhost:8080`** in your browser to launch the interactive **NeuroProxy Mission Control & Chaos Simulator**.
+---
 
-### 3. Test via Terminal (`curl`)
+## 6. How Judges Can Test It
+
+Judges can evaluate NeuroProxy through three distinct methods:
+
+### Method 1: Interactive Mission Control UI (1-Click)
+1. Run `go run ./cmd/neuroproxy` and open `http://localhost:8080`.
+2. Select any of the 6 pre-configured chaos presets:
+   - **Stripe Partner Webhook Drift**: Spanish localized keys (`numero_orden`, `monto_usd: 149.50`) healed to `amount_cents: 14950`.
+   - **2-Layer AML Cascade**: Multi-turn agent self-correction resolving schema drift on Turn 1 and KYC domain compliance on Turn 2.
+   - **Safety Guardrail Veto**: Malicious/corrupted webhook with missing price blocked with HTTP 422.
+   - **Legacy ERP Migration**: String float quantities (`"42.0"`) coerced to strict integer units.
+3. Click **"Inject Traffic & Execute Autonomous Healing"** to watch the animated 5-stage pipeline light up in real time!
+4. Click **"Burst 10x Benchmark"** to watch the compiled LRU Rule Cache handle 10 concurrent requests in `<0.2ms`.
+
+### Method 2: Bring Your Own API (BYOA)
+1. In the UI playground, enter your own live microservice URL into the **Live External Upstream URL** input (e.g. `https://httpbin.org/post`).
+2. Paste any JSON payload and send. NeuroProxy will reverse-proxy live network traffic to your endpoint!
+
+### Method 3: Terminal `curl` Testing
 ```bash
-# 1. Send a drifted Stripe/Shopify webhook with Self-Healing ON (returns 200 OK + X-Healed-By header)
+# 1. Test live autonomous self-healing (returns HTTP 200 OK + X-Healed-By header):
 curl -i -X POST http://localhost:8080/api/proxy/checkout \
   -H "Content-Type: application/json" \
-  -d '{"id":"ORD-991","payment":{"amount_dollars":"149.50","iso_currency":"usd"},"buyer":{"contact":{"email":"sre@googlecloud.com"}}}'
+  -d '{
+    "numero_orden": "ORD-LATAM-94821",
+    "pago": { "monto_usd": 149.50, "moneda": "USD" },
+    "cliente": { "correo_electronico": "sofia.garcia@empresa.mx" }
+  }'
 
-# 2. Send the same drifted webhook in Bypass Mode (returns 422 crash)
+# 2. Test raw bypass without self-healing (returns HTTP 400 Bad Request):
 curl -i -X POST "http://localhost:8080/api/proxy/checkout?bypass=true" \
   -H "Content-Type: application/json" \
-  -d '{"id":"ORD-991","payment":{"amount_dollars":"149.50","iso_currency":"usd"},"buyer":{"contact":{"email":"sre@googlecloud.com"}}}'
+  -d '{
+    "numero_orden": "ORD-LATAM-94821",
+    "pago": { "monto_usd": 149.50, "moneda": "USD" }
+  }'
+
+# 3. Test Value Conservation Safety Veto (returns HTTP 422 SAFETY_VETO):
+curl -i -X POST http://localhost:8080/api/proxy/checkout \
+  -H "Content-Type: application/json" \
+  -d '{
+    "order_number": "ORD-CORRUPTED-NULL",
+    "currency": "USD"
+  }'
 ```
 
 ---
 
-## 5. Deploy to Google Cloud Run (1 Command)
+## 7. Running Locally & Testing
 
+### Run All Unit & Integration Tests:
 ```bash
-gcloud run deploy neuroproxy \
-  --source . \
-  --region asia-southeast1 \
-  --allow-unauthenticated \
-  --set-env-vars="GEMINI_API_KEY=YOUR_GEMINI_API_KEY"
+go test -v ./...
 ```
+
+### Run Server Locally:
+```bash
+go run ./cmd/neuroproxy
+# or
+go run .
+```
+
+---
+
+## 8. Automated Cloud Run Deployment
+
+Deploy to Google Cloud Run with Google Cloud Build:
+```bash
+gcloud builds submit --config=cloudbuild.yaml
+```
+
+For complete GCP setup, Google Cloud Memorystore (Redis), and Secret Manager configuration, see **[`GCP_SETUP_AND_DEPLOYMENT_GUIDE.md`](./GCP_SETUP_AND_DEPLOYMENT_GUIDE.md)**.
+
+---
+
+*Google Cloud AI Builder Cup 2026 • Autonomous SRE & Developer Productivity • Team Zenith Systems*

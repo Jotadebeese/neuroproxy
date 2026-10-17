@@ -1,0 +1,60 @@
+steps:
+  # 1. Run Automated Unit & Integration Tests in Go 1.23 container
+  - name: 'golang:1.23-alpine'
+    entrypoint: 'go'
+    args: ['test', '-v', './...']
+    id: 'run-go-tests'
+
+  # 2. Build React + TypeScript + Tailwind UI Bundle
+  - name: 'node:20-alpine'
+    dir: 'frontend'
+    entrypoint: 'npm'
+    args: ['run', 'build']
+    id: 'build-frontend'
+
+  # 3. Build Production Multi-Stage Container Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/neuroproxy:${COMMIT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/neuroproxy:latest'
+      - '.'
+    id: 'build-container-image'
+
+  # 4. Push Container to Google Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/neuroproxy:${COMMIT_SHA}'
+    id: 'push-container-image'
+
+  # 5. Deploy to Google Cloud Run Edge
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'neuroproxy-gateway'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/neuroproxy:${COMMIT_SHA}'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--cpu=1'
+      - '--memory=512Mi'
+      - '--concurrency=80'
+      - '--timeout=30s'
+      - '--set-env-vars=GCP_PROJECT=$PROJECT_ID,PORT=8080'
+    id: 'deploy-to-cloud-run'
+
+substitutions:
+  _REGION: 'us-central1'
+  _REPO_NAME: 'neuroproxy-repo'
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/neuroproxy:${COMMIT_SHA}'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/neuroproxy:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

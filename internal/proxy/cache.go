@@ -12,15 +12,41 @@ import (
 	"time"
 )
 
-// RuleCache is a thread-safe in-memory store mapping structural schema fingerprints to learned transformation rules.
-type RuleCache struct {
-	mu    sync.RWMutex
-	rules map[string]*LearnedRule
+// RuleStorage defines the interface for rule caching across local memory or distributed stores.
+type RuleStorage interface {
+	Get(fingerprint string) (*LearnedRule, bool)
+	Set(rule *LearnedRule)
+	List() []LearnedRule
+	Count() int
+	Clear()
 }
 
+// RuleCache is a thread-safe in-memory store mapping structural schema fingerprints to learned transformation rules,
+// equipped with LRU eviction and TTL expiration to prevent memory leaks under production loads.
+type RuleCache struct {
+	mu         sync.RWMutex
+	rules      map[string]*LearnedRule
+	maxEntries int
+	ttl        time.Duration
+}
+
+// NewRuleCache creates a production RuleCache with safe defaults (5,000 max entries, 24-hour TTL).
 func NewRuleCache() *RuleCache {
+	return NewRuleCacheWithConfig(5000, 24*time.Hour)
+}
+
+// NewRuleCacheWithConfig creates a RuleCache with custom capacity and TTL limits.
+func NewRuleCacheWithConfig(maxEntries int, ttl time.Duration) *RuleCache {
+	if maxEntries <= 0 {
+		maxEntries = 5000
+	}
+	if ttl <= 0 {
+		ttl = 24 * time.Hour
+	}
 	return &RuleCache{
-		rules: make(map[string]*LearnedRule),
+		rules:      make(map[string]*LearnedRule),
+		maxEntries: maxEntries,
+		ttl:        ttl,
 	}
 }
 
@@ -50,14 +76,22 @@ func collectSchemaPaths(prefix string, obj map[string]interface{}, out *[]string
 	}
 }
 
-// Get retrieves a learned rule by fingerprint and increments its hit counter safely.
+// Get retrieves a learned rule by fingerprint, verifies TTL expiration, and increments its hit counter safely.
 func (c *RuleCache) Get(fingerprint string) (*LearnedRule, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	rule, ok := c.rules[fingerprint]
 	if !ok {
 		return nil, false
 	}
+
+	// Verify TTL expiration
+	if time.Since(rule.LastUsedAt) > c.ttl {
+		delete(c.rules, fingerprint)
+		return nil, false
+	}
+
 	rule.HitCount++
 	rule.LastUsedAt = time.Now()
 	// Return a copy to avoid data races
@@ -65,28 +99,50 @@ func (c *RuleCache) Get(fingerprint string) (*LearnedRule, bool) {
 	return &copyRule, true
 }
 
-// Set stores a learned transformation rule in memory.
+// Set stores a learned transformation rule in memory with LRU eviction when capacity is reached.
 func (c *RuleCache) Set(rule *LearnedRule) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	// If capacity reached, evict the least recently used rule
+	if len(c.rules) >= c.maxEntries {
+		var oldestKey string
+		var oldestTime time.Time
+		first := true
+		for k, r := range c.rules {
+			if first || r.LastUsedAt.Before(oldestTime) {
+				oldestTime = r.LastUsedAt
+				oldestKey = k
+				first = false
+			}
+		}
+		if oldestKey != "" {
+			delete(c.rules, oldestKey)
+		}
+	}
+
 	c.rules[rule.Fingerprint] = rule
 }
 
-// List returns all active rules sorted by most recently created.
+// List returns all active non-expired rules sorted by most recently used.
 func (c *RuleCache) List() []LearnedRule {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
+
+	now := time.Now()
 	out := make([]LearnedRule, 0, len(c.rules))
 	for _, r := range c.rules {
-		out = append(out, *r)
+		if now.Sub(r.LastUsedAt) <= c.ttl {
+			out = append(out, *r)
+		}
 	}
 	sort.Slice(out, func(i, j int) bool {
-		return out[i].CreatedAt.After(out[j].CreatedAt)
+		return out[i].LastUsedAt.After(out[j].LastUsedAt)
 	})
 	return out
 }
 
-// Count returns the number of cached rules.
+// Count returns the number of active cached rules.
 func (c *RuleCache) Count() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

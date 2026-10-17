@@ -23,9 +23,10 @@ type GeminiSynthesisResult struct {
 	ModelUsed         string                 `json:"model_used"`
 }
 
-// GeminiHealer coordinates runtime payload healing via Google Gemini Flash API.
+// GeminiHealer coordinates runtime payload healing via Google Gemini Flash API with rate-limiting & circuit breaker protection.
 type GeminiHealer struct {
-	httpClient *http.Client
+	httpClient     *http.Client
+	circuitBreaker *CircuitBreaker
 }
 
 func NewGeminiHealer() *GeminiHealer {
@@ -33,6 +34,7 @@ func NewGeminiHealer() *GeminiHealer {
 		httpClient: &http.Client{
 			Timeout: 12 * time.Second,
 		},
+		circuitBreaker: NewCircuitBreaker(5, 20*time.Second, 15.0, 20),
 	}
 }
 
@@ -41,7 +43,7 @@ func (h *GeminiHealer) HasAPIKey() bool {
 }
 
 // SynthesizeHeal calls Google Gemini Flash (gemini-2.5-flash / gemini-2.0-flash) to repair a broken payload,
-// supporting multi-turn agentic self-correction when a Layer 2 domain rule triggers on retry.
+// supporting multi-turn agentic self-correction with circuit-breaker protection and zero artificial bypasses.
 func (h *GeminiHealer) SynthesizeHeal(
 	ctx context.Context,
 	contract ServiceContract,
@@ -49,29 +51,17 @@ func (h *GeminiHealer) SynthesizeHeal(
 	upstreamErr string,
 	turn int,
 ) (*GeminiSynthesisResult, error) {
-	// For Turn 1 on the 2-Layer Cascading scenario (where Layer 2 AML error hasn't been revealed yet),
-	// heal only the Layer 1 schema fields first so the upstream service can reveal its Layer 2 409 AML error!
-	isLayer1OfCascading := turn == 1 && !strings.Contains(upstreamErr, "Layer2_") && hasHighValueKYC(brokenPayload)
-
 	apiKey := strings.TrimSpace(os.Getenv("GEMINI_API_KEY"))
-	if apiKey != "" && !isLayer1OfCascading {
+	if apiKey != "" && h.circuitBreaker.Allow() {
 		res, err := h.callGeminiAPI(ctx, apiKey, contract, brokenPayload, upstreamErr, turn)
 		if err == nil && res != nil && len(res.HealedPayload) > 0 {
+			h.circuitBreaker.RecordSuccess()
 			return res, nil
 		}
+		h.circuitBreaker.RecordFailure()
 	}
 
 	return h.synthesizeDeterministic(contract, brokenPayload, upstreamErr, apiKey != "", turn)
-}
-
-func hasHighValueKYC(broken map[string]interface{}) bool {
-	flat := make(map[string]interface{})
-	flattenPaths("", broken, flat)
-	_, hasKYC := flat["kyc_aml_estado"]
-	if !hasKYC {
-		_, hasKYC = flat["kyc_status"]
-	}
-	return hasKYC
 }
 
 func (h *GeminiHealer) callGeminiAPI(
@@ -89,8 +79,9 @@ func (h *GeminiHealer) callGeminiAPI(
 A downstream microservice rejected an incoming HTTP JSON payload due to schema drift or a domain rule violation.
 
 CRITICAL ZERO-HALLUCINATION RULE:
-Every value in "healed_payload" MUST derive from an actual value present in INCOMING BROKEN PAYLOAD.
-ONLY if a required numeric field (such as amount_cents) is completely missing from the incoming payload and has no source number to convert from, set it to 999999 so the downstream Value Conservation Guardrail can flag and veto the missing field.
+Every single value in "healed_payload" MUST derive strictly from an actual value present in INCOMING BROKEN PAYLOAD.
+You must NEVER invent, guess, or fabricate prices, quantities, IDs, or emails that do not exist in the source payload.
+If a required field cannot be derived from the incoming payload, omit it so downstream safety verification can accurately detect missing data.
 
 TARGET SERVICE: %s (%s)
 EXPECTED STRICT CONTRACT FIELDS:
@@ -245,7 +236,7 @@ func (h *GeminiHealer) synthesizeDeterministic(
 		// 2. Resolve amount_cents
 		amtPath, amtVal := findBestLeaf(flat, []string{"amount_cents", "payment.amount_dollars", "pago.monto_usd", "monto_usd", "amount_dollars", "total.amount", "amount", "price", "total"}, 999999)
 		transform := "to_int"
-		cents := 999999 // If missing from source payload, 999999 will be caught by VerifyValueConservation!
+		cents := 999999
 		if f, ok := toFloat(amtVal); ok && f != 999999 {
 			if strings.Contains(strings.ToLower(amtPath), "dollar") || strings.Contains(strings.ToLower(amtPath), "usd") || (f > 0 && f < 10000 && strings.Contains(fmt.Sprintf("%v", amtVal), ".")) {
 				cents = int(math.Round(f * 100))
@@ -328,10 +319,21 @@ func (h *GeminiHealer) synthesizeDeterministic(
 	default:
 		// Dynamic Custom Contract resolution
 		for targetField, rule := range contract.RequiredFields {
-			srcPath, srcVal := findBestLeaf(flat, []string{targetField}, "UNVERIFIED_MISSING")
+			candidates := getSemanticCandidates(targetField)
+			srcPath, srcVal := findBestLeaf(flat, candidates, "UNVERIFIED_MISSING")
 			transform := "identity"
 			ruleLower := strings.ToLower(rule)
-			if strings.Contains(ruleLower, "int") {
+			fieldLower := strings.ToLower(targetField)
+
+			if strings.Contains(fieldLower, "cents") || strings.Contains(ruleLower, "cents") {
+				if f, ok := toFloat(srcVal); ok && f != 999999 {
+					if strings.Contains(strings.ToLower(srcPath), "dollar") || strings.Contains(strings.ToLower(srcPath), "usd") || (f > 0 && f < 10000 && strings.Contains(fmt.Sprintf("%v", srcVal), ".")) {
+						transform = "dollars_to_cents"
+					} else {
+						transform = "to_int"
+					}
+				}
+			} else if strings.Contains(ruleLower, "int") || strings.Contains(fieldLower, "quantity") || strings.Contains(fieldLower, "qty") {
 				transform = "to_int"
 			} else if strings.Contains(ruleLower, "number") || strings.Contains(ruleLower, "float") {
 				transform = "to_float"
@@ -409,4 +411,24 @@ func buildGitHubDiff(serviceID string, mappings []FieldMapping) string {
 	b.WriteString(" \treturn raw\n")
 	b.WriteString(" }\n")
 	return b.String()
+}
+
+func getSemanticCandidates(target string) []string {
+	targetLower := strings.ToLower(target)
+	switch {
+	case strings.Contains(targetLower, "order") || strings.Contains(targetLower, "id"):
+		return []string{target, "order_id", "numero_orden", "id", "order.id", "order_number", "reference", "ref"}
+	case strings.Contains(targetLower, "amount") || strings.Contains(targetLower, "cents") || strings.Contains(targetLower, "price"):
+		return []string{target, "amount_cents", "payment.amount_dollars", "pago.monto_usd", "monto_usd", "amount_dollars", "total.amount", "amount", "price", "total"}
+	case strings.Contains(targetLower, "currency") || strings.Contains(targetLower, "moneda"):
+		return []string{target, "currency", "payment.iso_currency", "pago.moneda", "moneda", "iso_currency", "curr"}
+	case strings.Contains(targetLower, "email") || strings.Contains(targetLower, "correo"):
+		return []string{target, "customer_email", "buyer.contact.email", "cliente.correo_electronico", "correo_electronico", "buyer.email", "email"}
+	case strings.Contains(targetLower, "sku"):
+		return []string{target, "sku_code", "item_sku", "sku", "product_id"}
+	case strings.Contains(targetLower, "qty") || strings.Contains(targetLower, "quantity"):
+		return []string{target, "quantity", "qty", "count", "units"}
+	default:
+		return []string{target}
+	}
 }
