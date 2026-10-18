@@ -19,6 +19,7 @@ COPY --from=builder /app/neuroproxy /app/neuroproxy
 COPY --from=builder /app/frontend/out /app/frontend/out
 
 ENV PORT=8080
+ENV STATIC_DIR=/app/frontend/out
 EXPOSE 8080
 
 CMD ["/app/neuroproxy"]

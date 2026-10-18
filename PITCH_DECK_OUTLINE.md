@@ -141,7 +141,7 @@
 ### Slide 14: Project Links
 * **GitHub Public Repository:** `https://github.com/Jotadebeese/neuroproxy`
 * **Demo Video Link (2-4 Minutes):** `[Your YouTube Unlisted or Google Drive Link]`
-* **Deployed Product Link (Live Cloud Run):** `[Your Cloud Run HTTPS URL]`
+* **Deployed Product Link (Live Cloud Run):** `https://neuroproxy-juxh47uzdq-uc.a.run.app`
 
 ### Slide 16: Thank You
 * **Team Zenith Systems**

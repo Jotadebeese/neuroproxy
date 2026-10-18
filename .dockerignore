@@ -1,0 +1,11 @@
+.git
+.github
+.env
+.env.local
+*.exe
+*.log
+*.pptx
+*.pdf
+node_modules
+frontend/node_modules
+tmp

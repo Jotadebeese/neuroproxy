@@ -2,10 +2,12 @@
 
 > **Google Cloud AI Builder Cup 2026 Submission** — Team **Zenith Systems**  
 > **Track:** Future of Work & Enterprise Productivity *(Autonomous Developer Infrastructure & SRE)*  
-> **Core Technologies:** Go 1.23, Google Gemini (`gemini-2.5-flash`), React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Google Cloud Run, Cloud Logging, Cloud Trace, Cloud Memorystore (Redis)
+> **Core Technologies:** Go 1.23, Google Gemini (`gemini-2.5-flash`), React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Google Cloud Run, Cloud Logging, Cloud Trace, Cloud Memorystore (Redis)  
+> 🌐 **Live Cloud Run Deployment:** [https://neuroproxy-juxh47uzdq-uc.a.run.app](https://neuroproxy-juxh47uzdq-uc.a.run.app)
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run%20Active-brightgreen.svg)](https://neuroproxy-juxh47uzdq-uc.a.run.app)
 [![Go Tests](https://img.shields.io/badge/Go%20Tests-100%25%20Passing-brightgreen.svg)]()
-[![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud-Run%20Ready-blue.svg)]()
+[![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud-Run%20Deployed-blue.svg)](https://neuroproxy-juxh47uzdq-uc.a.run.app)
 [![Gemini 2.5 Flash](https://img.shields.io/badge/Gemini%202.5-Flash%20Active-orange.svg)]()
 [![Zero Hallucination](https://img.shields.io/badge/Value%20Conservation-100%25%20Guaranteed-emerald.svg)]()
 [![Memory Footprint](https://img.shields.io/badge/Container%20Size-%3C15MB-purple.svg)]()
