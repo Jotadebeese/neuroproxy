@@ -118,9 +118,12 @@ TASK:
 		},
 	}
 
+	model := os.Getenv("GEMINI_MODEL")
+	if model == "" {
+		model = "gemini-3.8-flash"
+	}
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, apiKey)
 	bodyBytes, _ := json.Marshal(reqBody)
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=%s", apiKey)
-
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, err
