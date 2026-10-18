@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
               <span className="text-[11px] px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
-                Gemini 2.5 Flash
+                Gemini 3.8 Flash
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">

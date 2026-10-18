@@ -2,13 +2,13 @@
 
 > **Google Cloud AI Builder Cup 2026 Submission** — Team **Zenith Systems**  
 > **Track:** Future of Work & Enterprise Productivity *(Autonomous Developer Infrastructure & SRE)*  
-> **Core Technologies:** Go 1.23, Google Gemini (`gemini-2.5-flash`), React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Google Cloud Run, Cloud Logging, Cloud Trace, Cloud Memorystore (Redis)  
+> **Core Technologies:** Go 1.23, Google Gemini (`gemini-3.8-flash`), React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Google Cloud Run, Cloud Logging, Cloud Trace, Cloud Memorystore (Redis)  
 > 🌐 **Live Cloud Run Deployment:** [https://neuroproxy-juxh47uzdq-uc.a.run.app](https://neuroproxy-juxh47uzdq-uc.a.run.app)
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run%20Active-brightgreen.svg)](https://neuroproxy-juxh47uzdq-uc.a.run.app)
 [![Go Tests](https://img.shields.io/badge/Go%20Tests-100%25%20Passing-brightgreen.svg)]()
 [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud-Run%20Deployed-blue.svg)](https://neuroproxy-juxh47uzdq-uc.a.run.app)
-[![Gemini 2.5 Flash](https://img.shields.io/badge/Gemini%202.5-Flash%20Active-orange.svg)]()
+[![Gemini 3.8 Flash](https://img.shields.io/badge/Gemini%203.8-Flash%20Active-orange.svg)]()
 [![Zero Hallucination](https://img.shields.io/badge/Value%20Conservation-100%25%20Guaranteed-emerald.svg)]()
 [![Memory Footprint](https://img.shields.io/badge/Container%20Size-%3C15MB-purple.svg)]()
 
@@ -23,7 +23,7 @@ Modern distributed microservices and enterprise applications fail constantly whe
 
 **NeuroProxy** is an ultra-light, sub-15MB autonomous reverse proxy deployed on **Google Cloud Run** at the network edge. When an upstream service rejects an incoming payload:
 1. NeuroProxy intercepts the rejection while holding the client HTTP connection open.
-2. An autonomous multi-turn agentic loop powered by **Google Gemini 2.5 Flash** reasons about the contract error and synthesizes a repaired payload.
+2. An autonomous multi-turn agentic loop powered by **Google Gemini 3.8 Flash** reasons about the contract error and synthesizes a repaired payload.
 3. A deterministic **Value Conservation Guardrail** mathematically proves zero hallucinated data before delivery.
 4. The healed payload is delivered to the microservice, returning **`HTTP 200 OK`** with zero customer downtime.
 5. The verified transformation rule is compiled into a two-tier **LRU Rule Cache** and **Google Cloud Memorystore (Redis)**—serving all subsequent matching requests in **`<0.2ms` at $0 LLM cost**.

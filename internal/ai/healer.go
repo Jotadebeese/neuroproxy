@@ -179,7 +179,7 @@ TASK:
 		RootCauseAnalysis: output.RootCauseAnalysis,
 		GitHubPRTitle:     output.GitHubPRTitle,
 		GitHubPRDiff:      output.GitHubPRDiff,
-		ModelUsed:         fmt.Sprintf("gemini-2.5-flash (Google AI Live • Turn %d)", turn),
+		ModelUsed:         fmt.Sprintf("%s (Google AI Live • Turn %d)", model, turn),
 	}, nil
 }
 
@@ -317,9 +317,13 @@ func (h *GeminiHealer) synthesizeDeterministic(
 	prTitle := fmt.Sprintf("fix(%s): autonomous schema adapter for %s payload drift", contract.ID, contract.ID)
 	prDiff := buildGitHubDiff(contract.ID, mappings)
 
-	modelLabel := fmt.Sprintf("gemini-2.5-flash (Synthesizer • Turn %d)", turn)
+	activeModel := os.Getenv("GEMINI_MODEL")
+	if activeModel == "" {
+		activeModel = "gemini-3.8-flash"
+	}
+	modelLabel := fmt.Sprintf("%s (Synthesizer • Turn %d)", activeModel, turn)
 	if hadKey {
-		modelLabel = fmt.Sprintf("gemini-2.5-flash (Google AI • Turn %d)", turn)
+		modelLabel = fmt.Sprintf("%s (Google AI • Turn %d)", activeModel, turn)
 	}
 
 	return &GeminiSynthesisResult{
